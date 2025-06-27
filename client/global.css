@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* TailwindV4 theme and design tokens */
+@theme {
+  /* Fonts */
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  /* Shark Theme Colors */
+  --color-shark-blue: 59 130 246;
+  --color-shark-blue-dark: 37 99 235;
+  --color-shark-blue-light: 96 165 250;
+  --color-ocean-blue: 14 165 233;
+  --color-ocean-deep: 2 132 199;
+  --color-wave-light: 103 232 249;
+  --color-success-green: 34 197 94;
+  --color-danger-red: 239 68 68;
+
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(217.2 91.2% 59.8%);
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 84% 4.9%);
+
+  --color-primary: hsl(217.2 91.2% 59.8%);
+  --color-primary-foreground: hsl(355.7 100% 97.3%);
+
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(222.2 84% 4.9%);
+
+  --color-sidebar-background: hsl(0 0% 98%);
+
+  --color-sidebar-foreground: hsl(240 5.3% 26.1%);
+
+  --color-sidebar-accent: hsl(240 4.8% 95.9%);
+
+  --color-sidebar-accent-foreground: hsl(240 5.9% 10%);
+
+  --color-sidebar-border: hsl(220 13% 91%);
+
+  --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+/* Custom utility classes for shark theme */
+.bg-shark-blue {
+  background-color: rgb(var(--color-shark-blue));
+}
+
+.bg-shark-blue-dark {
+  background-color: rgb(var(--color-shark-blue-dark));
+}
+
+.bg-shark-blue-light {
+  background-color: rgb(var(--color-shark-blue-light));
+}
+
+.text-shark-blue {
+  color: rgb(var(--color-shark-blue));
+}
+
+.border-shark-blue {
+  border-color: rgb(var(--color-shark-blue));
+}
+
+.hover\:bg-shark-blue:hover {
+  background-color: rgb(var(--color-shark-blue));
+}
+
+.hover\:bg-shark-blue-dark:hover {
+  background-color: rgb(var(--color-shark-blue-dark));
+}
+
+/* Mobile-friendly font sizes */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .text-xs {
+    font-size: 14px !important;
+  }
+
+  .text-sm {
+    font-size: 16px !important;
+  }
+
+  .text-base {
+    font-size: 18px !important;
+  }
+
+  .text-lg {
+    font-size: 20px !important;
+  }
+
+  .text-xl {
+    font-size: 22px !important;
+  }
+
+  .text-2xl {
+    font-size: 26px !important;
+  }
+}
+
+/* Mobile App Container */
+.mobile-container {
+  max-width: 400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: white;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .mobile-container {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    min-height: calc(100vh - 40px);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+}
