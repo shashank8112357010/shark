@@ -13,7 +13,7 @@ const BottomNavigation = () => {
   ];
 
   return (
-    <div className="bg-white border-t border-gray-200 px-2 py-1 z-50 flex-shrink-0">
+    <div className="bg-white border-t border-gray-200 px-2 py-2 z-50 flex-shrink-0 safe-area-bottom">
       <div className="flex justify-around items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -24,16 +24,17 @@ const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center py-1 px-1 rounded-lg transition-all",
+                "flex flex-col items-center py-2 px-3 rounded-lg transition-all active:scale-95 focus-visible",
+                "min-h-12 min-w-12", // Ensure 44px+ touch target
                 isActive
                   ? "text-shark-blue"
                   : "text-gray-600 hover:text-gray-800",
               )}
             >
-              <Icon size={14} />
-              <span className="text-xs mt-0.5">{item.label}</span>
+              <Icon size={18} />
+              <span className="text-xs mt-1 text-readable">{item.label}</span>
               {isActive && (
-                <div className="w-4 h-0.5 bg-shark-blue rounded-full mt-0.5"></div>
+                <div className="w-4 h-0.5 bg-shark-blue rounded-full mt-1"></div>
               )}
             </button>
           );
