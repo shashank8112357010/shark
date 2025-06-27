@@ -149,6 +149,7 @@
   background: white;
   position: relative;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -164,4 +165,99 @@
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
   }
+}
+
+/* Mobile UX Standards */
+/* Better touch targets - minimum 44px */
+button,
+.button,
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Smooth scrolling for content areas */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for mobile */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* Prevent overscroll bounce on iOS */
+.no-overscroll {
+  overscroll-behavior: contain;
+}
+
+/* Better text readability */
+.text-readable {
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* Safe area padding for devices with notches */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Focus styles for better accessibility */
+.focus-visible {
+  outline: 2px solid rgb(var(--color-shark-blue));
+  outline-offset: 2px;
+}
+
+/* Optimized animations for mobile */
+.animate-fast {
+  animation-duration: 0.15s;
+}
+
+/* Improved form inputs for mobile */
+input[type="number"],
+input[type="text"],
+input[type="password"],
+textarea {
+  font-size: 16px; /* Prevents zoom on iOS */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Better button feedback */
+.button-press {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Card shadows optimized for mobile */
+.card-shadow {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-shadow-lg {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
