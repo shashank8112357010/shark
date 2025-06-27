@@ -12,56 +12,65 @@ const Invite = () => {
     "https://www.rrplb69-iviesm-onocnc717.com/index/user/register/invite_code/vta8o.html";
   const inviteCode = "vta8o";
 
-  const fallbackCopyTextToClipboard = (text: string) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    textArea.style.opacity = "0";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      document.execCommand("copy");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Fallback copy failed:", err);
-    }
-
-    document.body.removeChild(textArea);
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(inviteLink);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } else {
-        fallbackCopyTextToClipboard(inviteLink);
-      }
-    } catch (err) {
-      console.error("Clipboard API failed, using fallback:", err);
-      fallbackCopyTextToClipboard(inviteLink);
+  const copyToClipboard = (text: string) => {
+    // Try modern Clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        },
+        (err) => {
+          console.warn("Clipboard API failed:", err);
+          fallbackCopy(text);
+        },
+      );
+    } else {
+      // Use fallback for non-secure contexts or unsupported browsers
+      fallbackCopy(text);
     }
   };
 
-  const handleCopyCode = async () => {
+  const fallbackCopy = (text: string) => {
     try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(inviteCode);
+      // Create a temporary textarea element
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "absolute";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "-9999px";
+      textArea.setAttribute("readonly", "");
+
+      document.body.appendChild(textArea);
+
+      // Select and copy the text
+      textArea.select();
+      textArea.setSelectionRange(0, 99999); // For mobile devices
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (successful) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        fallbackCopyTextToClipboard(inviteCode);
+        console.error("Fallback copy failed");
+        // Show user a manual copy message
+        alert(`Please copy manually: ${text}`);
       }
     } catch (err) {
-      console.error("Clipboard API failed, using fallback:", err);
-      fallbackCopyTextToClipboard(inviteCode);
+      console.error("All copy methods failed:", err);
+      // Show user a manual copy message as last resort
+      alert(`Please copy manually: ${text}`);
     }
+  };
+
+  const handleCopyLink = () => {
+    copyToClipboard(inviteLink);
+  };
+
+  const handleCopyCode = () => {
+    copyToClipboard(inviteCode);
   };
 
   return (
