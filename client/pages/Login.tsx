@@ -133,26 +133,28 @@ const Login = () => {
               </div>
             )}
 
-            {/* Invitation Code */}
-            <div>
-              <label className="block text-gray-700 text-base font-medium mb-3 text-readable">
-                Invitation Code
-              </label>
-              <div className="relative">
-                <Users
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-shark-blue"
-                  size={18}
-                />
-                <Input
-                  type="text"
-                  name="invitationCode"
-                  value={formData.invitationCode}
-                  onChange={handleInputChange}
-                  className="pl-12 h-14 bg-white border border-gray-200 rounded-xl text-base focus-visible"
-                  placeholder="Invitation code"
-                />
+            {/* Invitation Code (only for registration) */}
+            {!isLogin && (
+              <div>
+                <label className="block text-gray-700 text-base font-medium mb-3 text-readable">
+                  Invitation Code
+                </label>
+                <div className="relative">
+                  <Users
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-shark-blue"
+                    size={18}
+                  />
+                  <Input
+                    type="text"
+                    name="invitationCode"
+                    value={formData.invitationCode}
+                    onChange={handleInputChange}
+                    className="pl-12 h-14 bg-white border border-gray-200 rounded-xl text-base focus-visible"
+                    placeholder="Invitation code"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="space-y-4 mt-8 pb-6 safe-area-bottom">
