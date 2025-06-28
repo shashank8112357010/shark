@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import BottomNavigation from "@/components/BottomNavigation";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  ArrowDownLeft,
-  RotateCcw,
-} from "lucide-react";
+import Layout from "@/components/Layout";
+import Header from "@/components/Header";
+import { ArrowUpRight, ArrowDownLeft, RotateCcw } from "lucide-react";
 
 const AccountRecords = () => {
   const navigate = useNavigate();
@@ -73,21 +69,11 @@ const AccountRecords = () => {
   };
 
   return (
-    <div className="mobile-container">
-      <div className="min-h-screen bg-gray-50 pb-20">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-shark-blue to-shark-blue-dark px-6 py-6">
-          <div className="flex items-center mb-6">
-            <button onClick={() => navigate(-1)} className="text-white mr-4">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-white text-xl font-semibold">
-              Account records
-            </h1>
-          </div>
-
+    <Layout
+      header={
+        <Header title="Account records" showBackButton>
           {/* Balance Info */}
-          <div className="flex items-center bg-white/10 rounded-lg p-3">
+          <div className="flex items-center bg-white/10 rounded-lg p-3 mt-4">
             <div className="w-12 h-12 bg-shark-blue-dark rounded-lg flex items-center justify-center mr-3">
               <div className="text-white text-lg font-bold italic">S</div>
             </div>
@@ -96,64 +82,63 @@ const AccountRecords = () => {
               <div className="text-lg font-semibold">23.00</div>
             </div>
           </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="px-6 mt-6">
-          <div className="flex bg-white rounded-lg overflow-hidden shadow-sm">
-            {["ALL", "WITHDRAWALS", "RECHARGE"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-3 text-center font-medium text-sm ${
-                  activeTab === tab
-                    ? "bg-white text-shark-blue border-b-2 border-shark-blue"
-                    : "bg-gray-50 text-gray-600"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Transactions List */}
-        <div className="px-6 mt-6 space-y-3">
-          {getFilteredTransactions().map((transaction) => (
-            <div
-              key={transaction.id}
-              className="bg-white rounded-lg p-4 flex items-center justify-between"
+        </Header>
+      }
+      className="scroll-smooth no-overscroll"
+    >
+      {/* Filter Tabs */}
+      <div className="px-6 mt-6">
+        <div className="flex bg-white rounded-lg overflow-hidden card-shadow">
+          {["ALL", "WITHDRAWALS", "RECHARGE"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-center font-medium text-sm transition-all active:scale-98 focus-visible ${
+                activeTab === tab
+                  ? "bg-white text-shark-blue border-b-2 border-shark-blue"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+              }`}
             >
-              <div className="flex items-center">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mr-4">
-                  {getTransactionIcon(transaction.type)}
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">
-                    {transaction.type}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {transaction.status}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {transaction.date}
-                  </div>
-                </div>
-              </div>
-              <div
-                className={`text-lg font-semibold ${
-                  transaction.isPositive ? "text-shark-blue" : "text-red-500"
-                }`}
-              >
-                {transaction.amount}
-              </div>
-            </div>
+              {tab}
+            </button>
           ))}
         </div>
-
-        <BottomNavigation />
       </div>
-    </div>
+
+      {/* Transactions List */}
+      <div className="px-6 mt-6 space-y-3 pb-6">
+        {getFilteredTransactions().map((transaction) => (
+          <div
+            key={transaction.id}
+            className="bg-white rounded-lg p-4 flex items-center justify-between card-shadow"
+          >
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                {getTransactionIcon(transaction.type)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-gray-900 text-readable">
+                  {transaction.type}
+                </div>
+                <div className="text-sm text-gray-600 text-readable">
+                  {transaction.status}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {transaction.date}
+                </div>
+              </div>
+            </div>
+            <div
+              className={`text-lg font-semibold ${
+                transaction.isPositive ? "text-shark-blue" : "text-red-500"
+              }`}
+            >
+              {transaction.amount}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Layout>
   );
 };
 

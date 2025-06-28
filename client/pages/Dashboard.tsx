@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import BottomNavigation from "@/components/BottomNavigation";
+import Layout from "@/components/Layout";
+import Header from "@/components/Header";
 import LevelCard from "@/components/LevelCard";
 import WelcomeModal from "@/components/WelcomeModal";
 import { Button } from "@/components/ui/button";
@@ -149,10 +150,9 @@ const Dashboard = () => {
   const currentLevelData = getSelectedLevelData();
 
   return (
-    <div className="mobile-container">
-      <div className="h-screen bg-gray-50 flex flex-col">
-        {/* Fixed Header Banner */}
-        <div className="relative h-48 bg-gradient-to-br from-shark-blue to-shark-blue-dark overflow-hidden flex-shrink-0">
+    <Layout
+      header={
+        <div className="relative h-48 bg-gradient-to-br from-shark-blue to-shark-blue-dark overflow-hidden">
           {/* Background pattern */}
           <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-cyan-400/20"></div>
 
@@ -162,125 +162,128 @@ const Dashboard = () => {
             <div className="text-white/80 text-base">Ocean Investment</div>
           </div>
         </div>
-        {/* Fixed Navigation Grid */}
-        <div className="px-6 -mt-6 relative z-10 flex-shrink-0">
-          <div className="bg-white rounded-xl p-3 shadow-lg">
-            <div className="grid grid-cols-5 gap-1">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
+      }
+      className="scroll-smooth no-overscroll"
+    >
+      {/* Fixed Navigation Grid */}
+      <div className="px-6 -mt-6 relative z-10">
+        <div className="bg-white rounded-xl p-3 card-shadow-lg">
+          <div className="grid grid-cols-5 gap-1">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.path)}
+                  className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-50 transition-all active:scale-95 focus-visible"
+                >
+                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
+                    <Icon size={14} className="text-gray-700" />
+                  </div>
+                  <span className="text-xs text-gray-700 text-center text-readable">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Content Area */}
+      <div className="px-6 pb-6">
+        {/* Level Selector */}
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-4 text-readable">
+            Investment Levels
+          </h2>
+          <div className="overflow-x-auto">
+            <div className="flex space-x-3 pb-2 min-w-max">
+              {levelData.map((levelInfo) => {
+                const isUnlocked = isLevelUnlocked(
+                  levelInfo.level,
+                  levelInfo.referralsNeeded,
+                );
+                const isSelected = selectedLevel === levelInfo.level;
+
                 return (
                   <button
-                    key={item.label}
-                    onClick={() => navigate(item.path)}
-                    className="flex flex-col items-center p-1 rounded-lg hover:bg-gray-50 transition-colors"
+                    key={levelInfo.level}
+                    onClick={() => setSelectedLevel(levelInfo.level)}
+                    className={`flex-shrink-0 px-4 py-3 rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                      isSelected
+                        ? "border-shark-blue bg-shark-blue text-white"
+                        : isUnlocked
+                          ? "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
+                          : "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+                    }`}
+                    disabled={!isUnlocked}
                   >
-                    <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center mb-1">
-                      <Icon size={12} className="text-gray-700" />
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-readable">
+                        Level {levelInfo.level}
+                      </div>
+                      <div className="text-xs mt-1">
+                        {isUnlocked ? "✓" : "🔒"}
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-700 text-center">
-                      {item.label}
-                    </span>
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto px-6">
-          {/* Level Selector */}
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold mb-4">Investment Levels</h2>
-            <div className="overflow-x-auto">
-              <div className="flex space-x-3 pb-2 min-w-max">
-                {levelData.map((levelInfo) => {
-                  const isUnlocked = isLevelUnlocked(
-                    levelInfo.level,
-                    levelInfo.referralsNeeded,
-                  );
-                  const isSelected = selectedLevel === levelInfo.level;
-
-                  return (
-                    <button
-                      key={levelInfo.level}
-                      onClick={() => setSelectedLevel(levelInfo.level)}
-                      className={`flex-shrink-0 px-4 py-3 rounded-lg border-2 transition-all ${
-                        isSelected
-                          ? "border-shark-blue bg-shark-blue text-white"
-                          : isUnlocked
-                            ? "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
-                            : "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
-                      }`}
-                      disabled={!isUnlocked}
-                    >
-                      <div className="text-center">
-                        <div className="text-sm font-medium">
-                          Level {levelInfo.level}
-                        </div>
-                        <div className="text-xs mt-1">
-                          {isUnlocked ? "✓" : "🔒"}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Current Referrals Display */}
-            <div className="mt-4 bg-white rounded-lg p-3 shadow-sm">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Current Referrals:</span>
-                <span className="font-semibold text-shark-blue">
-                  {currentReferrals}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Selected Level Sharks */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-4">
-              Level {selectedLevel} Sharks
-            </h3>
-            <div className="space-y-4">
-              {currentLevelData.sharks.map((shark, index) => (
-                <LevelCard
-                  key={index}
-                  level={selectedLevel}
-                  title={shark.title}
-                  image={shark.image}
-                  price={shark.price}
-                  total={shark.total}
-                  daily={shark.daily}
-                  endDay={shark.endDay}
-                  isUnlocked={isLevelUnlocked(
-                    selectedLevel,
-                    currentLevelData.referralsNeeded,
-                  )}
-                  referralsNeeded={currentLevelData.referralsNeeded}
-                  currentReferrals={currentReferrals}
-                  reward={currentLevelData.reward}
-                  onBuy={() => handleBuyLevel(shark)}
-                  onViewRequirements={() =>
-                    handleViewRequirements(currentLevelData)
-                  }
-                />
-              ))}
+          {/* Current Referrals Display */}
+          <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 text-readable">
+                Current Referrals:
+              </span>
+              <span className="font-semibold text-shark-blue">
+                {currentReferrals}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Fixed Bottom Navigation */}
-        <BottomNavigation />
-
-        <WelcomeModal
-          isOpen={showWelcomeModal}
-          onClose={() => setShowWelcomeModal(false)}
-        />
+        {/* Selected Level Sharks */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-4 text-readable">
+            Level {selectedLevel} Sharks
+          </h3>
+          <div className="space-y-4">
+            {currentLevelData.sharks.map((shark, index) => (
+              <LevelCard
+                key={index}
+                level={selectedLevel}
+                title={shark.title}
+                image={shark.image}
+                price={shark.price}
+                total={shark.total}
+                daily={shark.daily}
+                endDay={shark.endDay}
+                isUnlocked={isLevelUnlocked(
+                  selectedLevel,
+                  currentLevelData.referralsNeeded,
+                )}
+                referralsNeeded={currentLevelData.referralsNeeded}
+                currentReferrals={currentReferrals}
+                reward={currentLevelData.reward}
+                onBuy={() => handleBuyLevel(shark)}
+                onViewRequirements={() =>
+                  handleViewRequirements(currentLevelData)
+                }
+              />
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+      />
+    </Layout>
   );
 };
 
