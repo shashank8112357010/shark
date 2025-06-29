@@ -8,12 +8,15 @@ const BottomNavigation = () => {
 
   const navItems = [
     { path: "/dashboard", icon: Home, label: "Home" },
-    { path: "/invite", icon: Share2, label: "Invite" },
+   
+    { path: "/recharge", icon: User, label: "Recharge" },
+    { path: "/withdraw", icon: User, label: "Withdraw" },
     { path: "/profile", icon: User, label: "Profile" },
+
   ];
 
   return (
-    <div className="bg-white border-t border-gray-200 px-2 py-2 z-50 flex-shrink-0 safe-area-bottom">
+    <div className="bg-white border-t  border-gray-200 px-2 pt-2 z-50 flex-shrink-0 safe-area-bottom">
       <div className="flex justify-around items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -24,17 +27,17 @@ const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center py-2 px-3 rounded-lg transition-all active:scale-95 focus-visible",
-                "min-h-12 min-w-12", // Ensure 44px+ touch target
+                "flex cursor-pointer flex-col items-center  px-3 rounded-lg transition-all active:scale-95 focus-visible",
+                "min-h-9 min-w-9", // Ensure 44px+ touch target
                 isActive
                   ? "text-shark-blue"
                   : "text-gray-600 hover:text-gray-800",
               )}
             >
-              <Icon size={18} />
-              <span className="text-xs mt-1 text-readable">{item.label}</span>
+              <Icon size={16} />
+              <span className="text-xs mt-1 p-0 text-readable">{item.label}</span>
               {isActive && (
-                <div className="w-4 h-0.5 bg-shark-blue rounded-full mt-1"></div>
+                <div className="w-4  font-bold bg-shark-blue rounded-full mt-1"></div>
               )}
             </button>
           );

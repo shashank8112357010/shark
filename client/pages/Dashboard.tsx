@@ -154,7 +154,7 @@ const Dashboard = () => {
       header={
         <div className="relative h-48 bg-gradient-to-br from-shark-blue to-shark-blue-dark overflow-hidden">
           {/* Background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-cyan-400/20"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50"></div>
 
           {/* Shark branding */}
           <div className="absolute bottom-6 left-6">
@@ -165,40 +165,15 @@ const Dashboard = () => {
       }
       className="scroll-smooth no-overscroll"
     >
-      {/* Fixed Navigation Grid */}
-      <div className="px-6 -mt-6 relative z-10">
-        <div className="bg-white rounded-xl p-3 card-shadow-lg">
-          <div className="grid grid-cols-5 gap-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => navigate(item.path)}
-                  className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-50 transition-all active:scale-95 focus-visible"
-                >
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mb-1">
-                    <Icon size={14} className="text-gray-700" />
-                  </div>
-                  <span className="text-xs text-gray-700 text-center text-readable">
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* Scrollable Content Area */}
-      <div className="px-6 pb-6">
+      <div className="px-6 py-6">
         {/* Level Selector */}
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-4 text-readable">
             Investment Levels
           </h2>
           <div className="overflow-x-auto">
-            <div className="flex space-x-3 pb-2 min-w-max">
+            <div className="flex space-x-3 p-2 min-w-max">
               {levelData.map((levelInfo) => {
                 const isUnlocked = isLevelUnlocked(
                   levelInfo.level,
@@ -210,22 +185,20 @@ const Dashboard = () => {
                   <button
                     key={levelInfo.level}
                     onClick={() => setSelectedLevel(levelInfo.level)}
-                    className={`flex-shrink-0 px-4 py-3 rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                    className={`flex-shrink-0 px-4 py-3  cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
                       isSelected
                         ? "border-shark-blue bg-shark-blue text-white"
                         : isUnlocked
                           ? "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
-                          : "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed"
+                          : "border-gray-300 text-gray-400 bg-gray-300 cursor-not-allowed"
                     }`}
                     disabled={!isUnlocked}
                   >
                     <div className="text-center">
-                      <div className="text-sm font-medium text-readable">
+                      <div className="text-sm hover:text-white font-medium text-readable">
                         Level {levelInfo.level}
                       </div>
-                      <div className="text-xs mt-1">
-                        {isUnlocked ? "✓" : "🔒"}
-                      </div>
+                      
                     </div>
                   </button>
                 );
@@ -283,8 +256,9 @@ const Dashboard = () => {
         isOpen={showWelcomeModal}
         onClose={() => setShowWelcomeModal(false)}
       />
+  
     </Layout>
   );
-};
+}
 
 export default Dashboard;

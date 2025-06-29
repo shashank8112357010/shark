@@ -111,33 +111,44 @@
 
 /* Mobile-friendly font sizes */
 @media (max-width: 768px) {
-  body {
-    font-size: 16px;
-    line-height: 1.5;
-  }
-
-  .text-xs {
+  html, body {
     font-size: 14px !important;
+    line-height: 1.4;
+    font-family: var(--font-sans), sans-serif;
   }
 
-  .text-sm {
-    font-size: 16px !important;
+  .text-xs { font-size: 12px !important; }
+  .text-sm { font-size: 13px !important; }
+  .text-base { font-size: 14px !important; }
+  .text-lg { font-size: 15px !important; }
+  .text-xl { font-size: 16px !important; }
+  .text-2xl { font-size: 18px !important; }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 14px !important;
+    padding: 6px 10px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
   }
 
-  .text-base {
-    font-size: 18px !important;
+  button, .button, [role="button"] {
+    font-size: 14px !important;
+    min-height: 32px !important;
+    min-width: 32px !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
   }
 
-  .text-lg {
-    font-size: 20px !important;
-  }
-
-  .text-xl {
-    font-size: 22px !important;
-  }
-
-  .text-2xl {
-    font-size: 26px !important;
+  .mobile-container {
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
   }
 }
 
@@ -145,7 +156,7 @@
 .mobile-container {
   max-width: 400px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 90vh;
   background: white;
   position: relative;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -242,10 +253,29 @@ input[type="number"],
 input[type="text"],
 input[type="password"],
 textarea {
-  font-size: 16px; /* Prevents zoom on iOS */
+  font-size: 14px; /* Prevents zoom on iOS and matches compact mobile UI */
   -webkit-appearance: none;
   appearance: none;
+  padding: 6px 10px;
+  height: 32px;
+  border-radius: 8px;
 }
+
+select {
+  font-size: 14px;
+  padding: 6px 10px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+button, .button, [role="button"] {
+  font-size: 14px;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
 
 /* Better button feedback */
 .button-press {

@@ -52,7 +52,7 @@ const Profile = () => {
       className="scroll-smooth no-overscroll"
     >
       {/* Stats Cards */}
-      <div className="px-6 -mt-4 relative z-10">
+      <div className="px-6 mt-4 relative z-10">
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
@@ -86,14 +86,14 @@ const Profile = () => {
           My management
         </h2>
 
-        <div className="space-y-2">
+        <div className="space-y-2 mt-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="w-full bg-white rounded-lg p-4 flex items-center justify-between hover:bg-gray-50 transition-colors active:scale-98 card-shadow focus-visible"
+                className="w-full bg-white my-5 rounded-lg p-4 mt-2 flex items-center justify-between hover:bg-gray-50 transition-colors active:scale-98 card-shadow focus-visible"
               >
                 <div className="flex items-center">
                   <Icon

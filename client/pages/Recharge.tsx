@@ -12,11 +12,11 @@ const Recharge = () => {
   const [selectedMethod, setSelectedMethod] = useState("Recharge X");
 
   const rechargeMethods = [
-    "Recharge X",
-    "Recharge C",
-    "Recharge N",
-    "Recharge-S",
-    "Recharge R",
+    "500",
+    "1000",
+    "2000",
+    "5000",
+    "10000",
   ];
 
   const handleRecharge = () => {
