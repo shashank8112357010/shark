@@ -19,7 +19,7 @@ const Layout = ({
     <div className="mobile-container">
       <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
         {/* Fixed Header */}
-        {header && <div className="flex-shrink-0 relative z-20">{header}</div>}
+        {header && <div className="flex-shrink-0 text-black relative z-20">{header}</div>}
 
         {/* Scrollable Content Area */}
         <div

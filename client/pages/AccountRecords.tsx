@@ -75,9 +75,9 @@ const AccountRecords = () => {
           {/* Balance Info */}
           <div className="flex items-center bg-white/10 rounded-lg p-3 mt-4">
             <div className="w-12 h-12 bg-shark-blue-dark rounded-lg flex items-center justify-center mr-3">
-              <div className="text-white text-lg font-bold italic">S</div>
+              <div className=" text-lg font-bold italic">S</div>
             </div>
-            <div className="text-white">
+            <div className=" text-black">
               <div className="text-sm opacity-80">Balance:</div>
               <div className="text-lg font-semibold">23.00</div>
             </div>
@@ -93,7 +93,7 @@ const AccountRecords = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 text-center font-medium text-sm transition-all active:scale-98 focus-visible ${
+              className={`flex-1 py-1 text-center font-bold font-sm text-xs transition-all active:scale-98  ${
                 activeTab === tab
                   ? "bg-white text-shark-blue border-b-2 border-shark-blue"
                   : "bg-gray-50 text-gray-600 hover:bg-gray-100"

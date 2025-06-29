@@ -27,7 +27,7 @@ const BottomNavigation = () => {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex cursor-pointer flex-col items-center  px-3 rounded-lg transition-all active:scale-95 focus-visible",
+                "flex cursor-pointer flex-col items-center  px-3 rounded-lg transition-all active:scale-95 ",
                 "min-h-9 min-w-9", // Ensure 44px+ touch target
                 isActive
                   ? "text-shark-blue"

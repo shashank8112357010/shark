@@ -16,7 +16,6 @@ const Recharge = () => {
     "1000",
     "2000",
     "5000",
-    "10000",
   ];
 
   const handleRecharge = () => {
@@ -26,10 +25,10 @@ const Recharge = () => {
   };
 
   return (
-    <Layout
+    <Layout 
       header={
         <Header title="Recharge" showBackButton>
-          <UserInfo balance={0} />
+          <UserInfo className="text-black" balance={0} />
         </Header>
       }
       className="scroll-smooth no-overscroll"
@@ -42,7 +41,7 @@ const Recharge = () => {
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="h-16 text-xl text-center border-gray-300 rounded-lg focus-visible"
+            className="h-16 text-xl text-center border-gray-300 rounded-lg "
             placeholder="Enter amount"
           />
         </div>
@@ -65,7 +64,7 @@ const Recharge = () => {
                   value={method}
                   checked={selectedMethod === method}
                   onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="w-6 h-6 text-shark-blue border-2 border-gray-300 focus:ring-shark-blue focus-visible"
+                  className="w-6 h-6 text-shark-blue border-2 border-gray-300 focus:ring-shark-blue "
                 />
               </label>
             ))}
@@ -75,7 +74,7 @@ const Recharge = () => {
         {/* Confirm Button */}
         <Button
           onClick={handleRecharge}
-          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
+          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform"
         >
           Confirm Recharge
         </Button>

@@ -17,14 +17,8 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    {
-      icon: Building2,
-      label: "Company Profile",
-      path: "/company-profile",
-      active: true,
-    },
-    { icon: FileText, label: "Account Record", path: "/account-records" },
-    { icon: Package, label: "My Collection", path: "/my-collection" },
+  
+    { icon: FileText, label: "Account Record", path: "/account-records"  , active: true,},
     { icon: CreditCard, label: "My bank and password", path: "/bank-info" },
   ];
 
@@ -45,7 +39,7 @@ const Profile = () => {
 
           {/* User ID */}
           <div className="text-center">
-            <div className="text-white text-lg font-medium">LV2:8800738900</div>
+            <div className="text-black text-lg font-medium">USER-ID:8800738900</div>
           </div>
         </Header>
       }

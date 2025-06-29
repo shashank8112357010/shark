@@ -89,7 +89,15 @@ const LevelCard = ({
         </div>
 
         {/* Action Button */}
-        {isUnlocked ? (
+        {/* For Level 5, show disabled locked button */}
+        {level === 5 ? (
+          <Button
+            disabled
+            className="w-full h-10 bg-gray-400 text-white font-medium rounded-md text-sm opacity-70 cursor-not-allowed"
+          >
+            Locked
+          </Button>
+        ) : isUnlocked ? (
           <Button
             onClick={onBuy}
             className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm"

@@ -29,12 +29,12 @@ const Withdraw = () => {
           title="My withdrawal"
           showBackButton
           rightElement={
-            <button className="text-white p-1 rounded-lg hover:bg-white/10 transition-colors">
+            <button className="text-black p-1 rounded-lg hover:bg-white/10 transition-colors">
               <FileText size={24} />
             </button>
           }
         >
-          <UserInfo balance={23.0} className="mt-4" />
+          <UserInfo balance={23.0} className="mt-4 text-black" />
         </Header>
       }
       className="scroll-smooth no-overscroll"
@@ -75,7 +75,7 @@ const Withdraw = () => {
                   setShowError(false);
                 }}
                 placeholder="Enter amount"
-                className="h-14 text-lg border-gray-200 focus-visible"
+                className="h-14 text-lg border-gray-200 e"
               />
               {showError && (
                 <div className="mt-2 px-3 py-2 bg-gray-600 text-white text-sm rounded text-readable">
@@ -90,7 +90,7 @@ const Withdraw = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter Password"
-                className="h-14 text-lg border-gray-200 focus-visible"
+                className="h-14 text-lg border-gray-200 "
               />
             </div>
           </div>
@@ -99,7 +99,7 @@ const Withdraw = () => {
         {/* Confirm Button */}
         <Button
           onClick={handleWithdraw}
-          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
+          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform"
         >
           Confirm withdrawal
         </Button>

@@ -4,14 +4,17 @@ import Layout from "@/components/Layout";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 
 const Invite = () => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
-  const inviteLink =
-    "https://www.rrplb69-iviesm-onocnc717.com/index/user/register/invite_code/vta8o.html";
+    // Get registration domain from env or fallback
+  const registrationDomain = import.meta.env.VITE_REGISTRATION_DOMAIN || "theshark.in";
   const inviteCode = "vta8o";
+  // Build invite link
+  const inviteLink = `https://${registrationDomain}/index/user/register/invite_code/${inviteCode}.html`;
 
   const copyToClipboard = (text: string) => {
     // Try modern Clipboard API first
@@ -77,7 +80,7 @@ const Invite = () => {
   return (
     <Layout
       header={<Header title="Invite" showBackButton />}
-      className="scroll-smooth no-overscroll"
+      className="scroll-smooth no-overscroll text-readable"
     >
       {/* Hero Image */}
       <div className="px-6 py-6">
@@ -94,162 +97,29 @@ const Invite = () => {
         </div>
       </div>
 
-      {/* Invite Link Section */}
-      <div className="px-6 space-y-4">
-        <div className="bg-white rounded-lg p-4 card-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-700 font-medium text-readable">
-              Invitation link:
-            </span>
-            <button
-              onClick={handleCopyLink}
-              className="text-shark-blue p-1 rounded-lg hover:bg-gray-100 transition-colors active:scale-95 focus-visible"
-              aria-label="Copy invitation link"
-            >
-              <Plus size={20} />
-            </button>
-          </div>
-          <div className="text-sm text-gray-600 break-all text-readable">
-            {inviteLink}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 card-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-700 font-medium text-readable">
-              Invitation code:
-            </span>
-            <button
-              onClick={handleCopyCode}
-              className="text-shark-blue p-1 rounded-lg hover:bg-gray-100 transition-colors active:scale-95 focus-visible"
-              aria-label="Copy invitation code"
-            >
-              <Plus size={20} />
-            </button>
-          </div>
-          <div className="text-sm text-gray-600 text-readable">
-            {inviteCode}
-          </div>
-        </div>
-
-        {/* Copy Link Button */}
-        <Button
-          onClick={handleCopyLink}
-          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
-        >
-          {copied ? "Copied!" : "Copy link"}
-        </Button>
-      </div>
-
-      {/* Level Progression & Rewards */}
-      <div className="px-6 mt-8">
-        <h3 className="text-xl font-semibold mb-4 text-readable">
-          Refer And Level Up
-        </h3>
-        <div className="space-y-4">
-          <div className="bg-white rounded-lg p-4 border-l-4 border-shark-blue card-shadow">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold text-lg text-readable">
-                  Level 1 → Level 2
-                </div>
-                <div className="text-gray-600 text-readable">
-                  10 referrals needed
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-shark-blue font-semibold">₹1,000</div>
-                <div className="text-sm text-gray-600 text-readable">
-                  Unlock Reward
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 border-l-4 border-shark-blue card-shadow">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold text-lg text-readable">
-                  Level 2 → Level 3
-                </div>
-                <div className="text-gray-600 text-readable">
-                  20 referrals needed
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-shark-blue font-semibold">₹1,000</div>
-                <div className="text-sm text-gray-600 text-readable">
-                  Unlock Reward
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 border-l-4 border-shark-blue card-shadow">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold text-lg text-readable">
-                  Level 3 → Level 4
-                </div>
-                <div className="text-gray-600 text-readable">
-                  30 referrals needed
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-shark-blue font-semibold">₹1,000</div>
-                <div className="text-sm text-gray-600 text-readable">
-                  Unlock Reward
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 border-l-4 border-shark-blue card-shadow">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold text-lg text-readable">
-                  Level 4 → Level 5
-                </div>
-                <div className="text-gray-600 text-readable">
-                  50 referrals needed
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-shark-blue font-semibold">₹2,000</div>
-                <div className="text-sm text-gray-600 text-readable">
-                  Final Level Reward
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Level Bonuses */}
-        <div className="mt-6 space-y-3">
-          <div className="text-shark-blue text-lg font-medium text-readable">
-            Level 1 Invite Bonus: 25%
-          </div>
-          <div className="text-shark-blue text-lg font-medium text-readable">
-            Level 2 Invite Bonus: 3%
-          </div>
-          <div className="text-shark-blue text-lg font-medium text-readable">
-            Level 3 Invite Bonus: 2%
-          </div>
-        </div>
-      </div>
-
-      {/* QR Code Section */}
+      {/* Scan & Register Section */}
       <div className="px-6 mt-8 pb-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-4 text-readable">QR code</h3>
+          <h3 className="text-lg font-semibold mb-4 text-readable">Scan & Register</h3>
           <div className="bg-white rounded-lg p-6 inline-block card-shadow">
-            {/* QR Code placeholder */}
-            <div className="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-              <div className="text-gray-500 text-sm text-center text-readable">
-                QR Code
-                <br />
-                Placeholder
-              </div>
+            <div className="w-48 h-48 flex items-center justify-center mx-auto">
+              <QRCodeCanvas value={inviteLink} size={192} />
+            </div>
+            <div className="mt-4">
+              <a
+                href={inviteLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-shark-blue underline text-base break-all"
+              >
+                {inviteLink}
+              </a>
+            </div>
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              Or share this link/QR with your friends to register
+            </div>
+            <div className="mt-2 text-green-600 text-sm font-semibold">
+              Earn ₹150 for every friend who registers and completes onboarding!
             </div>
           </div>
         </div>

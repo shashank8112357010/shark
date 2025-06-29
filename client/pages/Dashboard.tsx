@@ -44,12 +44,21 @@ const Dashboard = () => {
       reward: 0, // No reward for level 1
       sharks: [
         {
-          title: "Premium Shark",
+          title: "Shark A",
           image:
             "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 500,
           total: 5400,
           daily: 60,
+          endDay: 90,
+        },
+        {
+          title: "Shark B",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 1100,
+          total: 10800,
+          daily: 120,
           endDay: 90,
         },
       ],
@@ -86,8 +95,7 @@ const Dashboard = () => {
       sharks: [
         {
           title: "Shark E",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 2000,
           total: 4440,
           daily: 888,
@@ -102,8 +110,7 @@ const Dashboard = () => {
       sharks: [
         {
           title: "Shark F",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 3000,
           total: 4995,
           daily: 999,
@@ -114,12 +121,11 @@ const Dashboard = () => {
     {
       level: 5,
       referralsNeeded: 50,
-      reward: 2000, // Special reward for final level
+      reward: 2000,
       sharks: [
         {
           title: "Shark G",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 3000,
           total: 4995,
           daily: 999,
@@ -129,8 +135,10 @@ const Dashboard = () => {
     },
   ];
 
+  // Level 5 is open but the button is disabled and shows 'Locked'
   const isLevelUnlocked = (level: number, referralsNeeded: number) => {
-    return level <= 4; // Unlock levels 1-4, keep level 5 locked
+    if (level === 5) return true; // Level 5 is open but locked for purchase
+    return level <= 4;
   };
 
   const handleBuyLevel = (level: any) => {
@@ -185,7 +193,7 @@ const Dashboard = () => {
                   <button
                     key={levelInfo.level}
                     onClick={() => setSelectedLevel(levelInfo.level)}
-                    className={`flex-shrink-0 px-4 py-3  cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                    className={`flex-shrink-0 px-4 py-1  cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
                       isSelected
                         ? "border-shark-blue bg-shark-blue text-white"
                         : isUnlocked
@@ -207,7 +215,7 @@ const Dashboard = () => {
           </div>
 
           {/* Current Referrals Display */}
-          <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
+          {/* <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 text-readable">
                 Current Referrals:
@@ -216,7 +224,7 @@ const Dashboard = () => {
                 {currentReferrals}
               </span>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Selected Level Sharks */}
