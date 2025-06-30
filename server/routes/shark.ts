@@ -166,4 +166,71 @@ router.get("/history/:phone", async (req, res) => {
   res.json({ transactions });
 });
 
+// Get all investment levels and sharks
+router.get("/levels", async (req, res) => {
+  // In a real app, this data would come from a database or configuration file
+  // For now, using the hardcoded structure similar to the initial frontend
+  const mockLevelData = [
+    {
+      level: 1,
+      sharks: [
+        {
+          id: "shark-a-server", // Ensure IDs are unique if needed
+          title: "Shark A (from API)",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 500,
+          total: 5400,
+          daily: 60,
+          endDay: 90,
+        },
+        {
+          id: "shark-b-server",
+          title: "Shark B (from API)",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 1100,
+          total: 10800,
+          daily: 120,
+          endDay: 90,
+        },
+      ],
+    },
+    {
+      level: 2,
+      sharks: [
+        {
+          id: "shark-c-server",
+          title: "Shark C (from API)",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 2100,
+          total: 21600,
+          daily: 240,
+          endDay: 90,
+        },
+      ],
+    },
+    {
+      level: 3,
+      sharks: [
+        {
+          id: "shark-e-server",
+          title: "Shark E (Demo)",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 2000,
+          total: 4440,
+          daily: 888,
+          endDay: 5,
+        },
+      ],
+    },
+  ];
+  try {
+    // await connectDb(); // If fetching from DB
+    // const levels = await SomeLevelModel.find().populate('sharks'); // Example DB query
+    res.json({ levels: mockLevelData });
+  } catch (error: any) {
+    console.error("Error fetching levels:", error);
+    res.status(500).json({ error: "Failed to fetch investment levels" });
+  }
+});
+
 export default router;

@@ -5,15 +5,18 @@ import Header from "@/components/Header";
 import UserInfo from "@/components/UserInfo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import LoadingSpinner from "@/components/ui/LoadingSpinner"; // Import spinner
 import { FileText, ChevronDown } from "lucide-react";
 import { useStateChange } from "@/hooks/useStateChange";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/components/ui/use-toast"; // Import useToast
 
 const Recharge = () => {
   const navigate = useNavigate();
+  const { toast } = useToast(); // Initialize useToast
   const [amount, setAmount] = useState("1000");
-  const [selectedMethod, setSelectedMethod] = useState("Recharge X");
-  const { handleStateChange } = useStateChange();
+  const [selectedMethod, setSelectedMethod] = useState("Recharge X"); // This state seems unused if amounts are fixed. Consider removing or integrating.
+  const { handleStateChange } = useStateChange(); // This hook seems unused. Consider removing.
   const { userData } = useUser();
 
   const rechargeMethods = [
@@ -24,22 +27,31 @@ const Recharge = () => {
   ];
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  // Removed error and success states, will use toasts instead
 
   const handleRecharge = async () => {
-    setError("");
-    setSuccess("");
     setLoading(true);
     try {
       if (!userData?.phone) {
-        throw new Error("User not logged in");
+        // This should ideally be handled by routing/auth guards
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "User not logged in.",
+        });
+        setLoading(false);
+        return;
       }
       
-      // Validate amount
       const amountValue = parseInt(amount);
       if (isNaN(amountValue) || amountValue <= 0) {
-        throw new Error("Please enter a valid amount");
+        toast({
+          variant: "destructive",
+          title: "Invalid Amount",
+          description: "Please enter a valid positive amount.",
+        });
+        setLoading(false);
+        return;
       }
 
       const res = await fetch("/api/wallet/recharge", {
@@ -48,22 +60,33 @@ const Recharge = () => {
         body: JSON.stringify({ phone: userData.phone, amount: amountValue }),
       });
 
+      const data = await res.json(); // Try to parse JSON regardless of res.ok to get error messages
+
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Recharge failed");
+        throw new Error(data.error || "Recharge failed due to server error");
       }
 
-      const data = await res.json();
       if (!data.success) {
-        throw new Error(data.error || "Recharge failed");
+        // This case might be redundant if !res.ok already covers it
+        throw new Error(data.error || "Recharge processing failed");
       }
 
-      setSuccess("Recharge successful!");
+      toast({
+        title: "Recharge Successful!",
+        description: `₹${amountValue} has been added to your account.`,
+      });
+      // Potentially update user balance in context here
+      // Example: refreshUserData();
+
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1000);
+      }, 1500); // Slightly longer timeout for toast visibility
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      toast({
+        variant: "destructive",
+        title: "Recharge Failed",
+        description: err.message || "Something went wrong during recharge.",
+      });
     } finally {
       setLoading(false);
     }
@@ -101,10 +124,13 @@ const Recharge = () => {
                 <span className="text-lg text-readable">{method.name}</span>
                 <input
                   type="radio"
-                  name="rechargeMethod"
-                  value={method.id}
-                  checked={selectedMethod === method.id}
-                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  name="rechargeMethod" // Name should be consistent for radio group behavior
+                  value={method.id} // Value could be method.amount for simplicity if id is just amount
+                  checked={amount === method.amount.toString()} // Check against amount state
+                  onChange={(e) => {
+                    // setSelectedMethod(e.target.value); // Keep if selectedMethod state is used elsewhere
+                    setAmount(method.amount.toString());
+                  }}
                   className="w-6 h-6 text-shark-blue border-2 border-gray-300 focus:ring-shark-blue "
                 />
               </label>
@@ -112,16 +138,14 @@ const Recharge = () => {
           </div>
         </div>
 
-        {/* Error/Success Message */}
-        {error && <div className="text-red-600 text-center text-sm mb-2">{error}</div>}
-        {success && <div className="text-green-600 text-center text-sm mb-2">{success}</div>}
+        {/* Error/Success Messages are now handled by Toasts */}
         {/* Confirm Button */}
         <Button
           onClick={handleRecharge}
           disabled={loading}
-          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform"
+           className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform flex items-center justify-center"
         >
-          {loading ? "Recharging..." : "Confirm Recharge"}
+           {loading ? <LoadingSpinner size={28} /> : "Confirm Recharge"}
         </Button>
 
         {/* Recharge Rules */}

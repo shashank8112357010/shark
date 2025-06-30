@@ -13,6 +13,8 @@ import {
   UserPlus,
   MessageCircle,
 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface Shark {
   id: string;
@@ -31,23 +33,32 @@ interface LevelData {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const [balance, setBalance] = useState(0);
+  // State for dynamic level data
+  const [allLevelData, setAllLevelData] = useState<LevelData[]>([]);
+  const [levelsLoading, setLevelsLoading] = useState(true);
+  const [levelsError, setLevelsError] = useState<string | null>(null);
+
+  // Existing states
+  const [balance, setBalance] = useState(0); // This might be from UserContext eventually
   const [buyLoading, setBuyLoading] = useState<string | null>(null);
-  const [buyError, setBuyError] = useState("");
-  const [buySuccess, setBuySuccess] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState(1);
+  const [buyError, setBuyError] = useState(""); // Consider replacing with toast for buy errors
+  const [buySuccess, setBuySuccess] = useState(""); // Consider replacing with toast for buy success
+  const [selectedLevel, setSelectedLevel] = useState(1); // Default selected level
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [currentReferrals, setCurrentReferrals] = useState(0);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null); // Define user type if available
 
-  const levelData: LevelData[] = [
-    {
+
+  // Mock data for initial load, to be replaced by API call
+  const mockLevelData: LevelData[] = [
+        {
       level: 1,
       sharks: [
         {
           id: "shark-a",
-          title: "Shark A",
+          title: "Shark A (Fetched)",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 500,
           total: 5400,
@@ -56,7 +67,7 @@ const Dashboard = () => {
         },
         {
           id: "shark-b",
-          title: "Shark B",
+          title: "Shark B (Fetched)",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 1100,
           total: 10800,
@@ -70,67 +81,59 @@ const Dashboard = () => {
       sharks: [
         {
           id: "shark-c",
-          title: "Shark C",
+          title: "Shark C (Fetched)",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 2100,
           total: 21600,
           daily: 240,
           endDay: 90,
         },
-        {
-          id: "shark-d",
-          title: "Shark D",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 3100,
-          total: 27900,
-          daily: 310,
-          endDay: 90,
-        },
-      ],
-    },
-    {
-      level: 3,
-      sharks: [
-        {
-          id: "shark-e",
-          title: "Shark E",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 2000,
-          total: 4440,
-          daily: 888,
-          endDay: 5,
-        },
-      ],
-    },
-    {
-      level: 4,
-      sharks: [
-        {
-          id: "shark-f",
-          title: "Shark F",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 3000,
-          total: 4995,
-          daily: 999,
-          endDay: 5,
-        },
-      ],
-    },
-    {
-      level: 5,
-      sharks: [
-        {
-          id: "shark-g",
-          title: "Shark G",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 3000,
-          total: 4995,
-          daily: 999,
-          endDay: 5,
-        },
       ],
     },
   ];
+
+  // Effect to fetch level data
+  useEffect(() => {
+    const fetchLevelData = async () => {
+      setLevelsLoading(true);
+      setLevelsError(null);
+      try {
+        const response = await fetch('/api/shark/levels'); // Actual API call
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({})); // Try to get error message
+          throw new Error(errorData.error || 'Failed to fetch investment levels');
+        }
+        const data = await response.json();
+        const fetchedLevels = data.levels || [];
+        setAllLevelData(fetchedLevels);
+
+        // If data is successfully fetched and not empty, set selectedLevel to the first available level
+        // or keep current selectedLevel if it exists in fetched data
+        if (fetchedLevels.length > 0) {
+          const currentLevelExists = fetchedLevels.some((l: LevelData) => l.level === selectedLevel);
+          if (!currentLevelExists) {
+            setSelectedLevel(fetchedLevels[0].level);
+          }
+        } else {
+          // Handle case where no levels are fetched (e.g., set selectedLevel to a default or indicate no levels)
+           setSelectedLevel(1); // Or null, or handle appropriately
+        }
+
+      } catch (error: any) {
+        setLevelsError(error.message || 'An unknown error occurred fetching levels');
+        toast({
+          variant: "destructive",
+          title: "Error fetching levels",
+          description: error.message || "Could not load investment levels.",
+        });
+        setAllLevelData([]); // Set to empty on error
+      } finally {
+        setLevelsLoading(false);
+      }
+    };
+
+    fetchLevelData();
+  }, [toast]); // Removed selectedLevel from deps to avoid re-fetching on level select
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
@@ -173,15 +176,29 @@ const Dashboard = () => {
   };
 
   // Get current level data
-  const currentLevelData = levelData.find((level) => level.level === selectedLevel) || {
-    level: selectedLevel,
+  const currentLevelSharkData = allLevelData.find((level) => level.level === selectedLevel) || {
+    level: selectedLevel, // Fallback to selectedLevel if not found, though should ideally match
     sharks: []
   };
 
   useEffect(() => {
+    // This effect is for logging, can be kept or removed
     console.log("Selected Level:", selectedLevel);
-    console.log("Current Level Data:", currentLevelData);
-  }, [selectedLevel]);
+    console.log("Current Sharks Data:", currentLevelSharkData);
+  }, [selectedLevel, currentLevelSharkData]);
+
+  // Handle buy success/error with toasts
+  useEffect(() => {
+    if (buySuccess) {
+      toast({ title: "Purchase Successful!", description: buySuccess });
+      setBuySuccess(""); // Reset after showing toast
+    }
+    if (buyError) {
+      toast({ variant: "destructive", title: "Purchase Failed", description: buyError });
+      setBuyError(""); // Reset after showing toast
+    }
+  }, [buySuccess, buyError, toast]);
+
 
   return (
     <Layout className="scroll-smooth no-overscroll">
@@ -191,31 +208,42 @@ const Dashboard = () => {
           <h2 className="text-xl font-semibold mb-4 text-readable">
             Investment Levels
           </h2>
-          <div className="overflow-x-auto">
-            <div className="flex space-x-3 p-2 min-w-max">
-              {levelData.map((levelInfo) => {
-                const isSelected = selectedLevel === levelInfo.level;
-
-                return (
-                  <button
-                    key={levelInfo.level}
-                    onClick={() => {
-                      console.log("Level selected:", levelInfo.level);
-                      setSelectedLevel(levelInfo.level);
-                      setBuyError("");
-                      setBuySuccess("");
-                      // Reset loading state when level changes
-                      setBuyLoading(null);
-                    }}
-                    className={`relative flex-shrink-0 px-4 py-1 cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
-                      isSelected
-                        ? "border-shark-blue bg-shark-blue text-white"
-                        : "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-sm font-medium">
-                        Level {levelInfo.level}
+          {levelsLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <LoadingSpinner size={32} />
+            </div>
+          ) : levelsError ? (
+            <div className="text-center py-10 text-red-500">
+              Error: {levelsError}
+            </div>
+          ) : allLevelData.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              No investment levels available at the moment.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="flex space-x-3 p-2 min-w-max">
+                {allLevelData.map((levelInfo) => {
+                  const isSelected = selectedLevel === levelInfo.level;
+                  return (
+                    <button
+                      key={levelInfo.level}
+                      onClick={() => {
+                        setSelectedLevel(levelInfo.level);
+                        setBuyError("");    // Clear previous buy errors on level change
+                        setBuySuccess("");  // Clear previous buy success on level change
+                        setBuyLoading(null); // Reset buy loading state
+                      }}
+                      className={`relative flex-shrink-0 px-4 py-1 cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                        isSelected
+                          ? "border-shark-blue bg-shark-blue text-white"
+                          : "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-sm font-medium">
+                          Level {levelInfo.level}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -242,31 +270,34 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold mb-4 text-readable">
             Level {selectedLevel} Sharks
           </h3>
-          {buyError && (
-            <div className="text-red-600 text-sm mb-2">{buyError}</div>
-          )}
-          {buySuccess && (
-            <div className="text-green-600 text-sm mb-2">{buySuccess}</div>
-          )}
-          <div className="space-y-4">
-            {currentLevelData.sharks.map((shark) => {
-              const isCurrentSharkLoading = buyLoading === `${selectedLevel}-${shark.id}`;
-              return (
-                <LevelCard
-                  key={shark.id}
-                  level={selectedLevel}
-                  title={shark.title}
-                  image={shark.image}
-                  price={shark.price}
-                  total={shark.total}
-                  daily={shark.daily}
-                  endDay={shark.endDay}
-                  onBuy={() => handleBuyLevel(shark)}
-                  buyLoading={isCurrentSharkLoading}
-                />
-              );
-            })}
-          </div>
+          {/* buyError and buySuccess are now handled by toasts */}
+          {levelsLoading ? (
+            <div className="flex justify-center items-center py-10"><LoadingSpinner /></div>
+          ) : currentLevelSharkData && currentLevelSharkData.sharks.length > 0 ? (
+            <div className="space-y-4">
+              {currentLevelSharkData.sharks.map((shark) => {
+                const isCurrentSharkLoading = buyLoading === `${selectedLevel}-${shark.id}`;
+                return (
+                  <LevelCard
+                    key={shark.id}
+                    level={selectedLevel} // or shark.level if it exists and is reliable
+                    title={shark.title}
+                    image={shark.image}
+                    price={shark.price}
+                    total={shark.total}
+                    daily={shark.daily}
+                    endDay={shark.endDay}
+                    onBuy={() => handleBuyLevel(shark)}
+                    buyLoading={isCurrentSharkLoading}
+                  />
+                );
+              })}
+            </div>
+          ) : !levelsError ? ( // Only show "no sharks" if not already showing a general levelsError
+            <div className="text-center py-10 text-gray-500">
+              No sharks available for this level.
+            </div>
+          ) : null}
         </div>
       </div>
 

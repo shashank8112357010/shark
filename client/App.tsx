@@ -14,6 +14,7 @@ import Recharge from "./pages/Recharge";
 import Plans from "./pages/Plans";
 import Channel from "./pages/Channel";
 import Online from "./pages/Online";
+import HistoryPage from "./pages/History"; // Import History page
 import NotFound from "./pages/NotFound";
 import React from "react";
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/plans" element={<Plans />} />
           <Route path="/channel" element={<Channel />} />
           <Route path="/online" element={<Online />} />
+          <Route path="/history" element={<HistoryPage />} /> {/* Add History page route */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/ui/LoadingSpinner"; // Import spinner
 import { Lock } from "lucide-react";
 
 interface LevelCardProps {
@@ -66,9 +67,9 @@ const LevelCard = ({
         <Button
           onClick={onBuy}
           disabled={buyLoading}
-          className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm"
+          className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm flex items-center justify-center"
         >
-          {buyLoading ? "Processing..." : "Buy now"}
+          {buyLoading ? <LoadingSpinner size={20} /> : "Buy now"}
         </Button>
       </div>
     </div>
