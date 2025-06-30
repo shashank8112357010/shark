@@ -12,7 +12,7 @@ const Login = () => {
     password: "",
     confirmPassword: "",
     withdrawalPin: "",
-    invitationCode: "1a6jd",
+    invitationCode: "1a6jd", // withdrawalPin will be mapped to withdrawalPassword
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,9 +22,60 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = () => {
-    // Mock login/register logic
-    navigate("/dashboard");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      if (isLogin) {
+        // LOGIN
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: formData.phone,
+            password: formData.password,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Login failed");
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/dashboard");
+      } else {
+        // REGISTER
+        if (formData.password !== formData.confirmPassword) {
+          setError("Passwords do not match");
+          setLoading(false);
+          return;
+        }
+        // Special logic: first account (admin) must use phone 9999857892 and any invite code is accepted
+        let inviteCode = formData.invitationCode;
+        if (formData.phone === "9999857892") {
+          inviteCode = inviteCode || "admincode";
+        }
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: formData.phone,
+            password: formData.password,
+            withdrawalPassword: formData.withdrawalPin, // <-- send as withdrawalPassword
+            inviteCode,
+          }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Registration failed");
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setIsLogin(true);
+        setError("");
+      }
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -156,15 +207,20 @@ const Login = () => {
               </div>
             )}
 
+            {/* Error Message */}
+            {error && (
+              <div className="text-red-600 text-center text-sm mb-2">{error}</div>
+            )}
             {/* Action Buttons */}
             <div className="space-y-4 mt-8 pb-6 safe-area-bottom">
               {!isLogin ? (
                 <>
                   <Button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className="w-full h-14 mt-4 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-bold rounded-lg shadow-md transition-all"
                   >
-                    REGISTER
+                    {loading ? "Registering..." : "REGISTER"}
                   </Button>
                   <button
                     onClick={() => setIsLogin(true)}
@@ -177,9 +233,10 @@ const Login = () => {
                 <>
                   <Button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-xl active:scale-98 transition-transform focus-visible"
                   >
-                    LOGIN
+                    {loading ? "Logging in..." : "LOGIN"}
                   </Button>
                   <button
                     onClick={() => setIsLogin(false)}

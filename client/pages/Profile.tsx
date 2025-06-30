@@ -1,48 +1,58 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import {
-  Building2,
+import { 
   FileText,
-  Package,
   CreditCard,
   IndianRupee,
   Download,
   TrendingUp,
   ChevronRight,
 } from "lucide-react";
+import { useStateChange } from "@/hooks/useStateChange";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { handleStateChange } = useStateChange();
 
   const menuItems = [
-  
-    { icon: FileText, label: "Account Record", path: "/account-records"  , active: true,},
-    { icon: CreditCard, label: "My bank and password", path: "/bank-info" },
+    { 
+      icon: FileText, 
+      label: "Account Record", 
+      path: "/account-records",
+      isActive: location.pathname === "/account-records"
+    },
+    { 
+      icon: CreditCard, 
+      label: "My bank and password", 
+      path: "/bank-info",
+      isActive: location.pathname === "/bank-info"
+    },
+    { 
+      icon: FileText, 
+      label: "Invite Code", 
+      path: "/invite",
+      isActive: location.pathname === "/invite"
+    },
+    { 
+      icon: CreditCard, 
+      label: "Referral History", 
+      path: "/referral-history",
+      isActive: location.pathname === "/referral-history"
+    },
   ];
 
   const handleLogout = () => {
+    // Clear user data
+    localStorage.removeItem('user');
+    handleStateChange();
     navigate("/");
   };
 
   return (
     <Layout
-      header={
-        <Header className="py-8">
-          {/* Shark Logo */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-shark-blue-dark rounded-xl flex items-center justify-center">
-              <div className="text-white text-2xl font-bold italic">S</div>
-            </div>
-          </div>
-
-          {/* User ID */}
-          <div className="text-center">
-            <div className="text-black text-lg font-medium">USER-ID:8800738900</div>
-          </div>
-        </Header>
-      }
+    
       className="scroll-smooth no-overscroll"
     >
       {/* Stats Cards */}
@@ -87,18 +97,20 @@ const Profile = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="w-full bg-white my-5 rounded-lg p-4 mt-2 flex items-center justify-between hover:bg-gray-50 transition-colors active:scale-98 card-shadow focus-visible"
+                className={`w-full bg-white my-5 rounded-lg p-4 mt-2 flex items-center justify-between 
+                  ${item.isActive ? 'bg-gray-100' : 'hover:bg-gray-50'}
+                  transition-colors active:scale-98 card-shadow focus-visible`}
               >
                 <div className="flex items-center">
                   <Icon
                     size={24}
                     className={
-                      item.active ? "text-shark-blue" : "text-gray-500"
+                      item.isActive ? "text-shark-blue" : "text-gray-500"
                     }
                   />
                   <span
                     className={`ml-3 font-medium text-readable ${
-                      item.active ? "text-shark-blue" : "text-gray-700"
+                      item.isActive ? "text-shark-blue" : "text-gray-700"
                     }`}
                   >
                     {item.label}
@@ -115,7 +127,7 @@ const Profile = () => {
       <div className="px-6 mt-8 pb-6">
         <Button
           onClick={handleLogout}
-          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
+          className="w-full h-14 bg-red-400 hover:bg-shark-red-500 text-white  text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
         >
           Sign Out
         </Button>

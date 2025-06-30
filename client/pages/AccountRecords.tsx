@@ -70,20 +70,7 @@ const AccountRecords = () => {
 
   return (
     <Layout
-      header={
-        <Header title="Account records" showBackButton>
-          {/* Balance Info */}
-          <div className="flex items-center bg-white/10 rounded-lg p-3 mt-4">
-            <div className="w-12 h-12 bg-shark-blue-dark rounded-lg flex items-center justify-center mr-3">
-              <div className=" text-lg font-bold italic">S</div>
-            </div>
-            <div className=" text-black">
-              <div className="text-sm opacity-80">Balance:</div>
-              <div className="text-lg font-semibold">23.00</div>
-            </div>
-          </div>
-        </Header>
-      }
+     
       className="scroll-smooth no-overscroll"
     >
       {/* Filter Tabs */}

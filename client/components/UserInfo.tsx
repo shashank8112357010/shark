@@ -1,30 +1,40 @@
+import { memo } from "react";
+
 interface UserInfoProps {
-  phoneNumber?: string;
-  balance?: number;
-  avatarText?: string;
+  phone: string;
+  balance: number;
+  referrals: number;
+  loading: boolean;
   className?: string;
 }
 
 const UserInfo = ({
-  phoneNumber = "880****900",
-  balance = 0,
-  avatarText = "S",
+  phone,
+  balance,
+  referrals,
+  loading,
   className = "",
 }: UserInfoProps) => {
   return (
-    <div className={`flex items-center ${className}`}>
-      <div className="w-12 h-12 bg-shark-blue-dark rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-        <div className=" text-lg font-bold italic">{avatarText}</div>
-      </div>
-      <div className=" min-w-0 flex-1">
-        <div className="text-lg font-semibold truncate">{phoneNumber}</div>
-        <div className="text-sm opacity-90">
-          ₹ {balance.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-        </div>
-        <div className="text-xs opacity-70">Current balance</div>
-      </div>
+    <div className={`bg-white/80 rounded-lg px-3 py-1 text-black text-xs font-semibold ${className}`}>
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          {phone.replace(/^\d{2}(\d{6})\d{2}$/, '$1****$3')} | ₹{balance}
+          <div className="text-gray-400 text-xs">Referrals: {referrals}</div>
+        </>
+      )}
     </div>
   );
 };
 
-export default UserInfo;
+export default memo(UserInfo, (prevProps, nextProps) => {
+  return (
+    prevProps.phone === nextProps.phone &&
+    prevProps.balance === nextProps.balance &&
+    prevProps.referrals === nextProps.referrals &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.className === nextProps.className
+  );
+});

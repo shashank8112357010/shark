@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import authRouter from "./routes/auth";
+import walletRouter from "./routes/wallet";
+import sharkRouter from "./routes/shark";
+import referralRouter from "./routes/referral";
 
 export function createServer() {
   const app = express();
@@ -20,6 +23,15 @@ export function createServer() {
 
   // Add auth routes
   app.use("/api/auth", authRouter);
+
+  // Add wallet routes
+  app.use("/api/wallet", walletRouter);
+
+  // Add shark investment routes
+  app.use("/api/shark", sharkRouter);
+
+  // Add referral routes
+  app.use("/api/referral", referralRouter);
 
   return app;
 }

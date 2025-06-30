@@ -125,7 +125,7 @@
 
   .mobile-container {
     max-width: 100vw !important;
-    min-height: 100vh !important;
+    min-height: 80vh !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     padding: 0 !important;
@@ -145,8 +145,8 @@
 
 @media (min-width: 768px) {
   .mobile-container {
-    margin-top: 20px;
-    margin-bottom: 20px;
+  
+   
     min-height: calc(100vh - 40px);
     border-radius: 20px;
     overflow: hidden;

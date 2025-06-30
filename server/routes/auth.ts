@@ -1,50 +1,133 @@
 import { Router } from "express";
-import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
+import User from '../models/User';
+import { connectDb } from '../utils/db';
+import QRCode from 'qrcode';
 
 const router = Router();
 
-// MongoDB setup
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
-const DB_NAME = process.env.MONGO_DB || "shark";
-const client = new MongoClient(MONGO_URI);
+// Helper to generate unique invite code
+function generateInviteCode(length = 6) {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let code = "";
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
-async function getDb() {
-  if (!client.topology?.isConnected()) await client.connect();
-  return client.db(DB_NAME);
+// Helper to generate dynamic QR code data
+function generateDynamicQR(phone: string): string {
+  return `tel:${phone}`;
+}
+
+// Helper to generate dynamic referral link
+function generateReferralLink(inviteCode: string) {
+  return `https://theshark.in/join/${inviteCode}`;
 }
 
 // Register
 router.post("/register", async (req, res) => {
-  const { phone, password, inviteCode } = req.body;
-  if (!phone || !password) return res.status(400).json({ error: "Missing fields" });
-  const db = await getDb();
-  const users = db.collection("users");
-  const exists = await users.findOne({ phone });
-  if (exists) return res.status(409).json({ error: "User exists" });
-  const hash = await bcrypt.hash(password, 10);
-  const user = { phone, password: hash, inviteCode, created: new Date() };
-  await users.insertOne(user);
-  res.json({ success: true, user: { phone, inviteCode } });
+  try {
+    await connectDb();
+    const { phone, password, withdrawalPassword } = req.body;
+    
+    if (!phone || !password || !withdrawalPassword) {
+      return res.status(400).json({ error: "Phone, password, and withdrawal password are required" });
+    }
+
+    // Check if user already exists
+    const exists = await User.findOne({ phone });
+    if (exists) {
+      return res.status(409).json({ error: "User already exists" });
+    }
+
+    // Generate invite code
+    let userInviteCode = generateInviteCode();
+    
+    // Get referrer from query parameter if available
+    const referrer = req.query.referrer ? String(req.query.referrer) : undefined;
+
+    // Hash passwords
+    const hash = await bcrypt.hash(password, 10);
+    const withdrawalHash = await bcrypt.hash(withdrawalPassword, 10);
+
+    // Create user
+    const user = new User({
+      phone,
+      password: hash,
+      withdrawalPassword: withdrawalHash,
+      inviteCode: userInviteCode,
+      referrer,
+      created: new Date(),
+    });
+    await user.save();
+
+    // Generate QR code for user
+    const qrData = generateDynamicQR(phone);
+    const qrCode = await QRCode.toDataURL(qrData);
+
+    // Generate referral link
+    const referralLink = generateReferralLink(userInviteCode);
+    
+    res.json({ 
+      success: true, 
+      user: { 
+        phone: user.phone, 
+        inviteCode: userInviteCode,
+        referralLink
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: "Registration failed. Please try again." });
+  }
 });
 
 // Login
 router.post("/login", async (req, res) => {
-  const { phone, password } = req.body;
-  const db = await getDb();
-  const users = db.collection("users");
-  const user = await users.findOne({ phone });
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: "Invalid credentials" });
-  res.json({ success: true, user: { phone: user.phone, inviteCode: user.inviteCode || "" } });
+  try {
+    await connectDb();
+    const { phone, password } = req.body;
+    
+    if (!phone || !password) {
+      return res.status(400).json({ error: "Phone and password are required" });
+    }
+
+    // Find user
+    const user = await User.findOne({ phone });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Generate QR code
+    const qrData = generateDynamicQR(phone);
+    const qrCode = await QRCode.toDataURL(qrData);
+
+    res.json({ 
+      success: true, 
+      user: { 
+        phone: user.phone, 
+        inviteCode: user.inviteCode,
+        qrCode
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: "Login failed. Please try again." });
+  }
 });
 
 // Get user by phone
 router.get("/user/:phone", async (req, res) => {
-  const db = await getDb();
-  const users = db.collection("users");
-  const user = await users.findOne({ phone: req.params.phone });
+  await connectDb();
+  const user = await User.findOne({ phone: req.params.phone }); // Correct usage
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ phone: user.phone, inviteCode: user.inviteCode || "" });
 });

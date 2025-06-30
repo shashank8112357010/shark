@@ -5,32 +5,73 @@ import Header from "@/components/Header";
 import UserInfo from "@/components/UserInfo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FileText, ChevronDown } from "lucide-react";
+import { useStateChange } from "@/hooks/useStateChange";
+import { useUser } from "@/contexts/UserContext";
 
 const Recharge = () => {
   const navigate = useNavigate();
   const [amount, setAmount] = useState("1000");
   const [selectedMethod, setSelectedMethod] = useState("Recharge X");
+  const { handleStateChange } = useStateChange();
+  const { userData } = useUser();
 
   const rechargeMethods = [
-    "500",
-    "1000",
-    "2000",
-    "5000",
+    { id: "500", amount: 500, name: "₹500" },
+    { id: "1000", amount: 1000, name: "₹1,000" },
+    { id: "2000", amount: 2000, name: "₹2,000" },
+    { id: "5000", amount: 5000, name: "₹5,000" },
   ];
 
-  const handleRecharge = () => {
-    // Process recharge
-    console.log("Processing recharge:", amount, selectedMethod);
-    // Navigate to payment gateway or confirmation
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleRecharge = async () => {
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      if (!userData?.phone) {
+        throw new Error("User not logged in");
+      }
+      
+      // Validate amount
+      const amountValue = parseInt(amount);
+      if (isNaN(amountValue) || amountValue <= 0) {
+        throw new Error("Please enter a valid amount");
+      }
+
+      const res = await fetch("/api/wallet/recharge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: userData.phone, amount: amountValue }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Recharge failed");
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Recharge failed");
+      }
+
+      setSuccess("Recharge successful!");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Layout 
-      header={
-        <Header title="Recharge" showBackButton>
-          <UserInfo className="text-black" balance={0} />
-        </Header>
-      }
+     
       className="scroll-smooth no-overscroll"
     >
       <div className="px-6 py-6 space-y-6">
@@ -54,15 +95,15 @@ const Recharge = () => {
           <div className="space-y-3">
             {rechargeMethods.map((method) => (
               <label
-                key={method}
+                key={method.id}
                 className="flex items-center justify-between bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors card-shadow active:scale-98"
               >
-                <span className="text-lg text-readable">{method}</span>
+                <span className="text-lg text-readable">{method.name}</span>
                 <input
                   type="radio"
                   name="rechargeMethod"
-                  value={method}
-                  checked={selectedMethod === method}
+                  value={method.id}
+                  checked={selectedMethod === method.id}
                   onChange={(e) => setSelectedMethod(e.target.value)}
                   className="w-6 h-6 text-shark-blue border-2 border-gray-300 focus:ring-shark-blue "
                 />
@@ -71,12 +112,16 @@ const Recharge = () => {
           </div>
         </div>
 
+        {/* Error/Success Message */}
+        {error && <div className="text-red-600 text-center text-sm mb-2">{error}</div>}
+        {success && <div className="text-green-600 text-center text-sm mb-2">{success}</div>}
         {/* Confirm Button */}
         <Button
           onClick={handleRecharge}
+          disabled={loading}
           className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform"
         >
-          Confirm Recharge
+          {loading ? "Recharging..." : "Confirm Recharge"}
         </Button>
 
         {/* Recharge Rules */}
@@ -119,3 +164,4 @@ const Recharge = () => {
 };
 
 export default Recharge;
+

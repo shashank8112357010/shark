@@ -14,48 +14,50 @@ import {
   MessageCircle,
 } from "lucide-react";
 
+interface Shark {
+  id: string;
+  title: string;
+  image: string;
+  price: number;
+  total: number;
+  daily: number;
+  endDay: number;
+}
+
+interface LevelData {
+  level: number;
+  sharks: Shark[];
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
+
+  const [balance, setBalance] = useState(0);
+  const [buyLoading, setBuyLoading] = useState<string | null>(null);
+  const [buyError, setBuyError] = useState("");
+  const [buySuccess, setBuySuccess] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState(1);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [currentReferrals, setCurrentReferrals] = useState(35); // Mock referral count
-  const [selectedLevel, setSelectedLevel] = useState(1); // Currently selected level
+  const [currentReferrals, setCurrentReferrals] = useState(0);
+  const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    // Show welcome modal on first visit
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
-    if (!hasSeenWelcome) {
-      setShowWelcomeModal(true);
-      localStorage.setItem("hasSeenWelcome", "true");
-    }
-  }, []);
-
-  const navigationItems = [
-    { icon: IndianRupee, label: "Recharge", path: "/recharge" },
-    { icon: Download, label: "Withdraw", path: "/withdraw" },
-    { icon: MessageCircle, label: "Channel", path: "/channel" },
-    { icon: RotateCcw, label: "Online", path: "/online" },
-    { icon: UserPlus, label: "Invite", path: "/invite" },
-  ];
-
-  const levelData = [
+  const levelData: LevelData[] = [
     {
       level: 1,
-      referralsNeeded: 0, // Always unlocked
-      reward: 0, // No reward for level 1
       sharks: [
         {
+          id: "shark-a",
           title: "Shark A",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 500,
           total: 5400,
           daily: 60,
           endDay: 90,
         },
         {
+          id: "shark-b",
           title: "Shark B",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 1100,
           total: 10800,
           daily: 120,
@@ -65,22 +67,20 @@ const Dashboard = () => {
     },
     {
       level: 2,
-      referralsNeeded: 10,
-      reward: 1000,
       sharks: [
         {
+          id: "shark-c",
           title: "Shark C",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 2100,
           total: 21600,
           daily: 240,
           endDay: 90,
         },
         {
+          id: "shark-d",
           title: "Shark D",
-          image:
-            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 3100,
           total: 27900,
           daily: 310,
@@ -90,10 +90,9 @@ const Dashboard = () => {
     },
     {
       level: 3,
-      referralsNeeded: 20,
-      reward: 1000,
       sharks: [
         {
+          id: "shark-e",
           title: "Shark E",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 2000,
@@ -105,10 +104,9 @@ const Dashboard = () => {
     },
     {
       level: 4,
-      referralsNeeded: 30,
-      reward: 1000,
       sharks: [
         {
+          id: "shark-f",
           title: "Shark F",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 3000,
@@ -120,10 +118,9 @@ const Dashboard = () => {
     },
     {
       level: 5,
-      referralsNeeded: 50,
-      reward: 2000,
       sharks: [
         {
+          id: "shark-g",
           title: "Shark G",
           image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 3000,
@@ -135,45 +132,59 @@ const Dashboard = () => {
     },
   ];
 
-  // Level 5 is open but the button is disabled and shows 'Locked'
-  const isLevelUnlocked = (level: number, referralsNeeded: number) => {
-    if (level === 5) return true; // Level 5 is open but locked for purchase
-    return level <= 4;
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
+    if (!hasSeenWelcome) {
+      setShowWelcomeModal(true);
+      localStorage.setItem("hasSeenWelcome", "true");
+    }
+
+    const u = JSON.parse(localStorage.getItem("user") || '{}');
+    setUser(u);
+    if (u.phone) {
+      fetch(`/api/referral/count/${u.phone}`)
+        .then((res) => res.json())
+        .then((data) => setCurrentReferrals(data.count || 0));
+    }
+  }, []);
+
+  const handleBuyLevel = async (shark: Shark) => {
+    const loadingKey = `${selectedLevel}-${shark.id}`;
+    setBuyLoading(loadingKey);
+    try {
+      if (!user?.phone) throw new Error("User not logged in");
+      const res = await fetch("/api/shark/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: user.phone,
+          shark: shark.title,
+          price: shark.price,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Purchase failed");
+     
+    } catch (err) {
+      setBuyError(err.message || "Something went wrong");
+    } finally {
+      setBuyLoading(null);
+    }
   };
 
-  const handleBuyLevel = (level: any) => {
-    console.log("Buying level:", level);
+  // Get current level data
+  const currentLevelData = levelData.find((level) => level.level === selectedLevel) || {
+    level: selectedLevel,
+    sharks: []
   };
 
-  const handleViewRequirements = (level: any) => {
-    navigate("/invite");
-  };
-
-  const getSelectedLevelData = () => {
-    return (
-      levelData.find((level) => level.level === selectedLevel) || levelData[0]
-    );
-  };
-
-  const currentLevelData = getSelectedLevelData();
+  useEffect(() => {
+    console.log("Selected Level:", selectedLevel);
+    console.log("Current Level Data:", currentLevelData);
+  }, [selectedLevel]);
 
   return (
-    <Layout
-      header={
-        <div className="relative h-48 bg-gradient-to-br from-shark-blue to-shark-blue-dark overflow-hidden">
-          {/* Background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50"></div>
-
-          {/* Shark branding */}
-          <div className="absolute bottom-6 left-6">
-            <div className="text-white text-4xl font-bold italic">Shark</div>
-            <div className="text-white/80 text-base">Ocean Investment</div>
-          </div>
-        </div>
-      }
-      className="scroll-smooth no-overscroll"
-    >
-      {/* Scrollable Content Area */}
+    <Layout className="scroll-smooth no-overscroll">
       <div className="px-6 py-6">
         {/* Level Selector */}
         <div className="mt-6">
@@ -183,30 +194,29 @@ const Dashboard = () => {
           <div className="overflow-x-auto">
             <div className="flex space-x-3 p-2 min-w-max">
               {levelData.map((levelInfo) => {
-                const isUnlocked = isLevelUnlocked(
-                  levelInfo.level,
-                  levelInfo.referralsNeeded,
-                );
                 const isSelected = selectedLevel === levelInfo.level;
 
                 return (
                   <button
                     key={levelInfo.level}
-                    onClick={() => setSelectedLevel(levelInfo.level)}
-                    className={`flex-shrink-0 px-4 py-1  cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                    onClick={() => {
+                      console.log("Level selected:", levelInfo.level);
+                      setSelectedLevel(levelInfo.level);
+                      setBuyError("");
+                      setBuySuccess("");
+                      // Reset loading state when level changes
+                      setBuyLoading(null);
+                    }}
+                    className={`relative flex-shrink-0 px-4 py-1 cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
                       isSelected
                         ? "border-shark-blue bg-shark-blue text-white"
-                        : isUnlocked
-                          ? "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
-                          : "border-gray-300 text-gray-400 bg-gray-300 cursor-not-allowed"
+                        : "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
                     }`}
-                    disabled={!isUnlocked}
                   >
                     <div className="text-center">
-                      <div className="text-sm hover:text-white font-medium text-readable">
+                      <div className="text-sm font-medium">
                         Level {levelInfo.level}
                       </div>
-                      
                     </div>
                   </button>
                 );
@@ -214,8 +224,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Current Referrals Display */}
-          {/* <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
+          {/* Current Referrals */}
+          <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 text-readable">
                 Current Referrals:
@@ -224,7 +234,7 @@ const Dashboard = () => {
                 {currentReferrals}
               </span>
             </div>
-          </div> */}
+          </div>
         </div>
 
         {/* Selected Level Sharks */}
@@ -232,30 +242,30 @@ const Dashboard = () => {
           <h3 className="text-lg font-semibold mb-4 text-readable">
             Level {selectedLevel} Sharks
           </h3>
+          {buyError && (
+            <div className="text-red-600 text-sm mb-2">{buyError}</div>
+          )}
+          {buySuccess && (
+            <div className="text-green-600 text-sm mb-2">{buySuccess}</div>
+          )}
           <div className="space-y-4">
-            {currentLevelData.sharks.map((shark, index) => (
-              <LevelCard
-                key={index}
-                level={selectedLevel}
-                title={shark.title}
-                image={shark.image}
-                price={shark.price}
-                total={shark.total}
-                daily={shark.daily}
-                endDay={shark.endDay}
-                isUnlocked={isLevelUnlocked(
-                  selectedLevel,
-                  currentLevelData.referralsNeeded,
-                )}
-                referralsNeeded={currentLevelData.referralsNeeded}
-                currentReferrals={currentReferrals}
-                reward={currentLevelData.reward}
-                onBuy={() => handleBuyLevel(shark)}
-                onViewRequirements={() =>
-                  handleViewRequirements(currentLevelData)
-                }
-              />
-            ))}
+            {currentLevelData.sharks.map((shark) => {
+              const isCurrentSharkLoading = buyLoading === `${selectedLevel}-${shark.id}`;
+              return (
+                <LevelCard
+                  key={shark.id}
+                  level={selectedLevel}
+                  title={shark.title}
+                  image={shark.image}
+                  price={shark.price}
+                  total={shark.total}
+                  daily={shark.daily}
+                  endDay={shark.endDay}
+                  onBuy={() => handleBuyLevel(shark)}
+                  buyLoading={isCurrentSharkLoading}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -264,9 +274,8 @@ const Dashboard = () => {
         isOpen={showWelcomeModal}
         onClose={() => setShowWelcomeModal(false)}
       />
-  
     </Layout>
   );
-}
+};
 
 export default Dashboard;

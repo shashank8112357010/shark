@@ -4,7 +4,6 @@ import Header from "@/components/Header";
 const Channel = () => {
   return (
     <Layout
-      header={<Header title="Channel" />}
       className="scroll-smooth no-overscroll"
     >
       <div className="px-6 py-8 text-center">

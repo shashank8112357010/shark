@@ -9,12 +9,8 @@ interface LevelCardProps {
   total: number;
   daily: number;
   endDay: number;
-  isUnlocked: boolean;
-  referralsNeeded?: number;
-  currentReferrals?: number;
-  reward: number;
   onBuy: () => void;
-  onViewRequirements: () => void;
+  buyLoading?: boolean;
 }
 
 const LevelCard = ({
@@ -25,37 +21,16 @@ const LevelCard = ({
   total,
   daily,
   endDay,
-  isUnlocked,
-  referralsNeeded = 0,
-  currentReferrals = 0,
-  reward,
   onBuy,
-  onViewRequirements,
+  buyLoading = false,
 }: LevelCardProps) => {
+  console.log("hey 1 " +  price);
+  
+  
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 relative group">
       {/* Shine Effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-all duration-700 z-10"></div>
-
-      {/* Lock Overlay */}
-      {!isUnlocked && (
-        <div className="absolute inset-0 bg-black/60 z-20 flex items-center justify-center rounded-lg">
-          <div className="text-center text-white p-3">
-            <Lock size={24} className="mx-auto mb-2" />
-            <div className="text-sm font-semibold mb-1">
-              Level {level} Locked
-            </div>
-            <div className="text-xs mb-1">Need {referralsNeeded} referrals</div>
-            <div className="text-xs">
-              Current: {currentReferrals}/{referralsNeeded}
-            </div>
-            <div className="text-xs font-medium text-yellow-400 mt-1">
-              Unlock: ₹{reward}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="p-3">
         <h3 className="text-base font-semibold text-center mb-3">{title}</h3>
 
@@ -88,34 +63,17 @@ const LevelCard = ({
           </div>
         </div>
 
-        {/* Action Button */}
-        {/* For Level 5, show disabled locked button */}
-        {level === 5 ? (
-          <Button
-            disabled
-            className="w-full h-10 bg-gray-400 text-white font-medium rounded-md text-sm opacity-70 cursor-not-allowed"
-          >
-            Locked
-          </Button>
-        ) : isUnlocked ? (
-          <Button
-            onClick={onBuy}
-            className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm"
-          >
-            Buy now
-          </Button>
-        ) : (
-          <Button
-            onClick={onViewRequirements}
-            variant="outline"
-            className="w-full h-10 border-shark-blue text-shark-blue hover:bg-shark-blue hover:text-white font-medium rounded-md text-sm"
-          >
-            View Requirements
-          </Button>
-        )}
+        <Button
+          onClick={onBuy}
+          disabled={buyLoading}
+          className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm"
+        >
+          {buyLoading ? "Processing..." : "Buy now"}
+        </Button>
       </div>
     </div>
   );
 };
 
 export default LevelCard;
+  

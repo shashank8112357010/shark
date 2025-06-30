@@ -4,7 +4,6 @@ import Header from "@/components/Header";
 const Plans = () => {
   return (
     <Layout
-      header={<Header title="Plans" />}
       className="scroll-smooth no-overscroll"
     >
       <div className="px-6 py-8 text-center">

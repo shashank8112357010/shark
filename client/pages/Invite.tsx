@@ -5,9 +5,13 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
+import { useStateChange } from "@/hooks/useStateChange";
+import { useUser } from "@/contexts/UserContext";
 
 const Invite = () => {
   const navigate = useNavigate();
+  const { handleStateChange } = useStateChange();
+  const { userData } = useUser();
   const [copied, setCopied] = useState(false);
 
     // Get registration domain from env or fallback
@@ -55,6 +59,7 @@ const Invite = () => {
       document.body.removeChild(textArea);
 
       if (successful) {
+        handleStateChange();
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
@@ -79,7 +84,6 @@ const Invite = () => {
 
   return (
     <Layout
-      header={<Header title="Invite" showBackButton />}
       className="scroll-smooth no-overscroll text-readable"
     >
       {/* Hero Image */}
