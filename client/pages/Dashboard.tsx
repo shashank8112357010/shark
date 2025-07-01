@@ -94,42 +94,68 @@ const Dashboard = () => {
     const fetchLevelData = async () => {
       setLevelsLoading(true);
       setLevelsError(null);
+      let useMock = false; // Flag to decide if we need to use mock data
+
       try {
-        // First try to fetch from API
         const response = await fetch('/api/shark/levels');
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('API Error:', errorData);
-          
-          // If API fails, keep using mock data
-          return;
-        }
-
-        const data = await response.json();
-        console.log(data , "datav fetched ");
-        
-        const fetchedLevels = data.levels || [];
-        setLevelsLoading(false);
-        if (fetchedLevels.length > 0) {
-          setAllLevelData(fetchedLevels);
-          setSelectedLevel(fetchedLevels[0].level);
+          // API responded with an error (4xx, 5xx)
+          const errorData = await response.json().catch(() => ({ message: "Unknown API error" }));
+          setLevelsError(errorData.error || errorData.message || "Failed to fetch levels from API.");
+          console.error('API Error fetching levels:', errorData);
+          useMock = true; // Mark to use mock data due to API error
         } else {
-          console.log('No levels from API, keeping mock data');
+          // API responded successfully
+          const data = await response.json();
+          const fetchedLevels = data.levels || [];
+
+          if (fetchedLevels.length > 0) {
+            setAllLevelData(fetchedLevels);
+            if (fetchedLevels.find(level => level.level === selectedLevel)) {
+              // Keep current selectedLevel if it exists in new data
+            } else {
+              setSelectedLevel(fetchedLevels[0].level); // Set to first level from API
+            }
+            // Successfully loaded live data
+          } else {
+            // API success, but no levels returned (e.g., DB is empty)
+            setLevelsError("No investment levels found from the server."); // Informative message
+            console.log('No levels from API, will use mock data as fallback.');
+            useMock = true; // Mark to use mock data as live data is empty
+          }
         }
       } catch (error: any) {
-        console.error('Error fetching levels:', error);
-        toast({
-          variant: "destructive",
-          title: "Using Mock Data",
-          description: "Could not fetch live data. Using mock data instead.",
-        });
+        // Network error or other fetch-related error
+        setLevelsError(error.message || "Could not connect to fetch levels.");
+        console.error('Network or other error fetching levels:', error);
+        useMock = true; // Mark to use mock data due to fetch error
       } finally {
+        if (useMock) {
+          toast({
+            variant: "default", // Or "destructive" if preferred
+            title: "Displaying Example Data",
+            description: levelsError || "Could not fetch live investment data. Showing example plans.",
+          });
+          setAllLevelData(mockLevelData); // Set mock data
+          if (mockLevelData.length > 0) {
+            // Ensure selectedLevel is valid for mockData
+             if (mockLevelData.find(level => level.level === selectedLevel)) {
+              // Keep current selectedLevel if it exists in mock data
+            } else {
+              setSelectedLevel(mockLevelData[0].level); // Set selected level from mock data
+            }
+          } else {
+            setSelectedLevel(1); // Fallback if mock data is also empty
+            setAllLevelData([]); // Ensure allLevelData is empty if mock is empty
+            setLevelsError(levelsError || "No example plans available either.");
+          }
+        }
         setLevelsLoading(false);
       }
     };
 
     fetchLevelData();
-  }, [toast]);
+  }, [toast]); // Removed levelsError from dependency array to prevent re-fetch loops on error
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");

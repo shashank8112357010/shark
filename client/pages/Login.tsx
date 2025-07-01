@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react"; // Import useEffect
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Phone, Lock, Key, Users } from "lucide-react";
@@ -14,6 +14,28 @@ const Login = () => {
     withdrawalPin: "",
     invitationCode: "1a6jd", // withdrawalPin will be mapped to withdrawalPassword
   });
+
+  const location = useLocation(); // Get location object
+
+  useEffect(() => {
+    // Check for invite_code in URL query parameters when component mounts
+    const queryParams = new URLSearchParams(location.search);
+    const inviteCodeFromUrl = queryParams.get("invite_code");
+
+    if (inviteCodeFromUrl) {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        invitationCode: inviteCodeFromUrl,
+      }));
+      setIsLogin(false); // Switch to registration form
+      console.log("[Login.tsx] Prefilled invitation code from URL:", inviteCodeFromUrl);
+
+      // Optional: Remove the query parameter from URL after reading it, for cleaner URL
+      // navigate(location.pathname, { replace: true });
+      // Be cautious with this if there are other useful query params or page relies on them.
+    }
+  }, [location.search, navigate]); // Rerun if search params change (though typically only on load)
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({

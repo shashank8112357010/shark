@@ -63,11 +63,17 @@ const Invite = () => {
   const inviteCode = userData?.inviteCode || "";
 
   // Build invite link, ensure it's dynamically updated if inviteCode changes
-  // Reverting to the original link structure as the registration page's handling of URL params is not confirmed.
-  // The key change was making `inviteCode` dynamic.
+  // Using query parameter for a more standard approach.
   const inviteLink = inviteCode
-    ? `https://${registrationDomain}/index/user/register/invite_code/${inviteCode}.html`
-    : ""; // Or a fallback link, or disable QR/link if no code
+    ? `https://${registrationDomain}/?invite_code=${inviteCode}`
+    : "";
+
+  // Logging for debugging referral link generation
+  useEffect(() => {
+    console.log("[Invite.tsx] UserData Invite Code:", userData?.inviteCode);
+    console.log("[Invite.tsx] Registration Domain:", registrationDomain);
+    console.log("[Invite.tsx] Generated Invite Link:", inviteLink);
+  }, [userData?.inviteCode, registrationDomain, inviteLink]);
 
   const copyToClipboard = (text: string) => {
     // Try modern Clipboard API first

@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Added useCallback
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Header from "@/components/Header";
-import UserInfo from "@/components/UserInfo";
+// import UserInfo from "@/components/UserInfo"; // UserInfo is part of Layout, not directly used here
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Clock, DollarSign, History, FileText, ChevronDown } from "lucide-react";
-import { useStateChange } from "@/hooks/useStateChange"; // This hook seems unused here
+import { Eye, EyeOff } from "lucide-react"; // Removed unused icons from here
+// import { useStateChange } from "@/hooks/useStateChange"; // This hook was unused here
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -46,49 +46,79 @@ const Withdraw = () => {
   const [limits, setLimits] = useState<WithdrawalLimits | null>(null);
   const [history, setHistory] = useState<WithdrawalHistory[]>([]);
 
-  const fetchWithdrawalData = async () => {
+  // Using useCallback for fetchWithdrawalData in case it's needed by other parts, though primarily for useEffect here.
+  const fetchWithdrawalDataCallback = useCallback(async () => {
+    if (!userData?.phone) {
+      // This case should ideally be handled by the useEffect not running,
+      // or by the top-level "Not Logged In" guard in the component's return.
+      // However, if called directly, this check is useful.
+      setPageLoading(false); // Ensure loading stops if called when no user.
+      toast({
+          variant: "destructive",
+          title: "User Not Available",
+          description: "Cannot fetch withdrawal data without user information.",
+      });
+      return;
+    }
+
     setPageLoading(true);
     try {
-      if (!userData?.phone) {
-        throw new Error("User not logged in");
-      }
-
       const [limitsRes, historyRes] = await Promise.all([
         fetch(`/api/withdraw/${userData.phone}/limits`),
         fetch(`/api/withdraw/${userData.phone}/history`)
       ]);
 
-      if (!limitsRes.ok || !historyRes.ok) {
-        const errorData = await limitsRes.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch withdrawal data');
+      let errorMessages: string[] = [];
+
+      if (!limitsRes.ok) {
+        const errData = await limitsRes.json().catch(() => ({ error: "Failed to parse limits error" }));
+        errorMessages.push(`Limits: ${errData.error || limitsRes.statusText}`);
+      }
+      if (!historyRes.ok) {
+        const errData = await historyRes.json().catch(() => ({ error: "Failed to parse history error" }));
+        errorMessages.push(`History: ${errData.error || historyRes.statusText}`);
       }
 
-      const [limitsData, historyData] = await Promise.all([
-        limitsRes.json(),
-        historyRes.json()
-      ]);
+      if (errorMessages.length > 0) {
+        throw new Error(errorMessages.join("; "));
+      }
+
+      const limitsData = await limitsRes.json();
+      const historyData = await historyRes.json();
 
       setLimits({
         ...limitsData,
         openTime: limitsData.timeWindow?.start,
-        closeTime: limitsData.timeWindow?.end
+        closeTime: limitsData.timeWindow?.end,
       });
       setHistory(historyData.history || []);
 
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error Loading Page",
-        description: error.message || 'Failed to load withdrawal page data.',
+        title: "Error Loading Withdrawal Page",
+        description: error.message || 'Could not load necessary data.',
       });
+      setLimits(null);
+      setHistory([]);
     } finally {
       setPageLoading(false);
     }
-  };
+  }, [userData, toast]); // userData dependency ensures it re-runs if user logs in/out
+
 
   useEffect(() => {
-    fetchWithdrawalData();
-  }, [userData?.phone, toast]);
+    if (userData?.phone) { // Only fetch if user phone is available
+      fetchWithdrawalDataCallback();
+    } else {
+      // If no user phone, and context is not loading, means user is not logged in.
+      // The main component return handles showing "Not Logged In" UI.
+      // We just need to make sure loading is false.
+       if (!userData && !useUser().loading) { // Check if context itself is done loading
+         setPageLoading(false);
+       }
+    }
+  }, [userData, fetchWithdrawalDataCallback, useUser().loading]); // Add useUser().loading to wait for context
 
   const handleWithdraw = async () => {
     setSubmitLoading(true);

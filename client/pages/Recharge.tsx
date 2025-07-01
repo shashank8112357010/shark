@@ -15,8 +15,8 @@ const Recharge = () => {
   const navigate = useNavigate();
   const { toast } = useToast(); // Initialize useToast
   const [amount, setAmount] = useState("1000");
-  const [selectedMethod, setSelectedMethod] = useState("Recharge X"); // This state seems unused if amounts are fixed. Consider removing or integrating.
-  const { handleStateChange } = useStateChange(); // This hook seems unused. Consider removing.
+  // const [selectedMethod, setSelectedMethod] = useState("Recharge X"); // This state was unused.
+  // const { handleStateChange } = useStateChange(); // This hook was unused in this component.
   const { userData } = useUser();
 
   const rechargeMethods = [
