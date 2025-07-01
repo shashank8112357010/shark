@@ -10,15 +10,64 @@ import { useUser } from "@/contexts/UserContext";
 
 const Invite = () => {
   const navigate = useNavigate();
-  const { handleStateChange } = useStateChange();
-  const { userData } = useUser();
-  const [copied, setCopied] = useState(false);
+import { useState, useEffect } from "react"; // Import useEffect
+import { useNavigate } from "react-router-dom";
+import Layout from "@/components/Layout";
+// import Header from "@/components/Header"; // Header not explicitly used here
+// import { Button } from "@/components/ui/button"; // Button not explicitly used here
+// import { Plus } from "lucide-react"; // Plus not explicitly used here
+import { QRCodeCanvas } from "qrcode.react";
+import { useStateChange } from "@/hooks/useStateChange";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/components/ui/use-toast"; // For error notifications
 
-    // Get registration domain from env or fallback
+const Invite = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast(); // Initialize toast
+  const { handleStateChange } = useStateChange();
+  const { userData, loading: userLoading } = useUser();
+  const [copied, setCopied] = useState(false);
+  const [referralBonus, setReferralBonus] = useState<number | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReferralConfig = async () => {
+      setConfigLoading(true);
+      try {
+        const response = await fetch("/api/referral/config");
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || "Failed to fetch referral configuration");
+        }
+        const data = await response.json();
+        setReferralBonus(data.referralBonusAmount);
+      } catch (error: any) {
+        console.error("Error fetching referral config:", error);
+        toast({
+          variant: "destructive",
+          title: "Could not load referral bonus",
+          description: error.message,
+        });
+        setReferralBonus(150); // Fallback to a default if API fails, or null to hide message
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    fetchReferralConfig();
+  }, [toast]);
+
+  // Get registration domain from env or fallback
   const registrationDomain = import.meta.env.VITE_REGISTRATION_DOMAIN || "theshark.in";
-  const inviteCode = "vta8o";
-  // Build invite link
-  const inviteLink = `https://${registrationDomain}/index/user/register/invite_code/${inviteCode}.html`;
+
+  // Use invite code from userData, fallback to a default or empty if not available
+  const inviteCode = userData?.inviteCode || "";
+
+  // Build invite link, ensure it's dynamically updated if inviteCode changes
+  // Reverting to the original link structure as the registration page's handling of URL params is not confirmed.
+  // The key change was making `inviteCode` dynamic.
+  const inviteLink = inviteCode
+    ? `https://${registrationDomain}/index/user/register/invite_code/${inviteCode}.html`
+    : ""; // Or a fallback link, or disable QR/link if no code
 
   const copyToClipboard = (text: string) => {
     // Try modern Clipboard API first
@@ -122,9 +171,17 @@ const Invite = () => {
             <div className="mt-2 text-xs text-gray-500 text-center">
               Or share this link/QR with your friends to register
             </div>
-            <div className="mt-2 text-green-600 text-sm font-semibold">
-              Earn ₹150 for every friend who registers and completes onboarding!
-            </div>
+            {(referralBonus !== null && referralBonus > 0) && (
+              <div className="mt-2 text-green-600 text-sm font-semibold">
+                {configLoading ? "Loading bonus info..." : `Earn ₹${referralBonus} for every friend who registers and completes onboarding!`}
+              </div>
+            )}
+            {/* Fallback or alternative message if bonus is 0 or not loaded and no default is set */}
+            {(referralBonus === 0 && !configLoading) && (
+                <div className="mt-2 text-gray-600 text-sm font-semibold">
+                    Referral program details are currently unavailable.
+                </div>
+            )}
           </div>
         </div>
       </div>

@@ -57,6 +57,23 @@ router.get("/rewards/:phone", async (req, res) => {
   res.json({ totalReward: rewards[0]?.total || 0 });
 });
 
+// Get referral configuration (e.g., bonus amount)
+router.get("/config", (req, res) => {
+  // User should set REFERRAL_BONUS_AMOUNT in their .env file
+  const bonusAmount = process.env.REFERRAL_BONUS_AMOUNT;
+  if (bonusAmount && !isNaN(Number(bonusAmount))) {
+    res.json({ referralBonusAmount: Number(bonusAmount) });
+  } else {
+    // Fallback or error if not set or invalid
+    console.warn("REFERRAL_BONUS_AMOUNT not set or invalid in .env file. Using default of 0.");
+    res.status(500).json({
+        error: "Referral configuration not available.",
+        message: "Administrator: Please set REFERRAL_BONUS_AMOUNT in the .env file.",
+        referralBonusAmount: 0 // Default fallback
+    });
+  }
+});
+
 // Process referral reward when a transaction occurs
 router.post("/process-reward", async (req, res) => {
   await connectDb();

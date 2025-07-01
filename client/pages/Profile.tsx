@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { 
+import {
   FileText,
   CreditCard,
   IndianRupee,
@@ -10,74 +11,149 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useStateChange } from "@/hooks/useStateChange";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/components/ui/use-toast";
+import LoadingSpinner from "@/components/ui/LoadingSpinner"; // Optional: for loading states on cards
+
+// From server/models/Transaction.ts - simplified for this component's needs
+enum BackendTransactionType {
+  PURCHASE = 'purchase',
+  REFERRAL = 'referral',
+  WITHDRAWAL = 'withdrawal',
+  DEPOSIT = 'deposit'
+}
+interface BackendTransaction {
+  _id: string;
+  type: BackendTransactionType;
+  amount: number;
+  // other fields not strictly needed for sum
+}
+
 
 const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const { userData, loading: userLoading, error: userError } = useUser();
   const { handleStateChange } = useStateChange();
 
+  const [totalRecharge, setTotalRecharge] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0); // Primarily referral income
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    const fetchProfileStats = async () => {
+      if (!userData?.phone) {
+        if (!userLoading && userError) { // If user context itself had an error
+             toast({ variant: "destructive", title: "User Error", description: "Could not load user data for profile." });
+        }
+        return;
+      }
+
+      setLoadingStats(true);
+      try {
+        // Fetch all stats from the new endpoint
+        const statsResponse = await fetch(`/api/wallet/stats/${userData.phone}`);
+        if (!statsResponse.ok) {
+          const errorData = await statsResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to fetch profile statistics");
+        }
+        const statsData = await statsResponse.json();
+
+        setTotalRecharge(statsData.totalRecharge || 0);
+        // Assuming "Income" on the profile page primarily refers to referral earnings
+        setTotalIncome(statsData.totalReferralEarnings || 0);
+
+        // If other types of income need to be summed, adjust here or in backend
+        // For example, if there were 'EARNINGS' from plans as a separate transaction type:
+        // const otherEarnings = backendTransactions
+        //   .filter(tx => tx.type === BackendTransactionType.EARNING) // Assuming an EARNING type
+        //   .reduce((sum, tx) => sum + tx.amount, 0);
+        // setTotalIncome((statsData.totalReferralEarnings || 0) + otherEarnings);
+
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error Fetching Profile Stats",
+          description: error.message || "Could not load all profile statistics.",
+        });
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    if (!userLoading) { // Ensure userData is settled before fetching dependent stats
+        fetchProfileStats();
+    }
+  }, [userData, userLoading, userError, toast]);
+
   const menuItems = [
-    { 
-      icon: FileText, 
-      label: "Account Record", 
+    {
+      icon: FileText,
+      label: "Account Record",
       path: "/account-records",
-      isActive: location.pathname === "/account-records"
+      isActive: location.pathname === "/account-records",
     },
-    { 
-      icon: CreditCard, 
-      label: "My bank and password", 
-      path: "/bank-info",
-      isActive: location.pathname === "/bank-info"
+    {
+      icon: CreditCard,
+      label: "My bank and password",
+      path: "/bank-info", // Assuming this page exists or will be created
+      isActive: location.pathname === "/bank-info",
     },
-    { 
-      icon: FileText, 
-      label: "Invite Code", 
+    {
+      icon: FileText,
+      label: "Invite Code",
       path: "/invite",
-      isActive: location.pathname === "/invite"
+      isActive: location.pathname === "/invite",
     },
-    { 
-      icon: CreditCard, 
-      label: "Referral History", 
+    {
+      icon: CreditCard,
+      label: "Referral History",
       path: "/referral-history",
-      isActive: location.pathname === "/referral-history"
+      isActive: location.pathname === "/referral-history",
     },
   ];
 
   const handleLogout = () => {
-    // Clear user data
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
+    // Potentially call a context logout function if it exists to clear context state
+    // For now, handleStateChange might be for global state updates or could be removed if UserContext handles it
     handleStateChange();
     navigate("/");
   };
 
+  const displayBalance = userData?.balance?.toFixed(2) || "0.00";
+  const displayRecharge = totalRecharge.toFixed(2);
+  const displayIncome = totalIncome.toFixed(2);
+
   return (
-    <Layout
-    
-      className="scroll-smooth no-overscroll"
-    >
+    <Layout className="scroll-smooth no-overscroll">
       {/* Stats Cards */}
       <div className="px-6 mt-4 relative z-10">
         <div className="grid grid-cols-3 gap-3">
+          {/* Balance Card */}
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
               <IndianRupee size={20} className="text-shark-blue" />
-              <span className="text-shark-blue font-semibold">23.00</span>
+              {userLoading ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayBalance}</span>}
             </div>
             <div className="text-gray-600 text-sm text-readable">Balance</div>
           </div>
 
+          {/* Recharge Card */}
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
               <Download size={20} className="text-shark-blue" />
-              <span className="text-shark-blue font-semibold">1990</span>
+              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayRecharge}</span>}
             </div>
             <div className="text-gray-600 text-sm text-readable">Recharge</div>
           </div>
 
+          {/* Income Card */}
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
               <TrendingUp size={20} className="text-shark-blue" />
-              <span className="text-shark-blue font-semibold">523</span>
+              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayIncome}</span>}
             </div>
             <div className="text-gray-600 text-sm text-readable">Income</div>
           </div>
@@ -89,20 +165,19 @@ const Profile = () => {
         <h2 className="text-lg font-semibold mb-4 text-readable">
           My management
         </h2>
-
         <div className="space-y-2 mt-2">
           {menuItems.map((item) => {
-            const Icon = item.icon;
+            const IconComponent = item.icon; // Renamed to avoid conflict
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`w-full bg-white my-5 rounded-lg p-4 mt-2 flex items-center justify-between 
-                  ${item.isActive ? 'bg-gray-100' : 'hover:bg-gray-50'}
+                  ${item.isActive ? "bg-gray-100" : "hover:bg-gray-50"}
                   transition-colors active:scale-98 card-shadow focus-visible`}
               >
                 <div className="flex items-center">
-                  <Icon
+                  <IconComponent // Use renamed component
                     size={24}
                     className={
                       item.isActive ? "text-shark-blue" : "text-gray-500"
@@ -127,7 +202,7 @@ const Profile = () => {
       <div className="px-6 mt-8 pb-6">
         <Button
           onClick={handleLogout}
-          className="w-full h-14 bg-red-400 hover:bg-shark-red-500 text-white  text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
+          className="w-full h-14 bg-red-400 hover:bg-shark-red-500 text-white text-lg font-medium rounded-lg active:scale-98 transition-transform focus-visible"
         >
           Sign Out
         </Button>

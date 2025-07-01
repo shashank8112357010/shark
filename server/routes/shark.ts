@@ -4,6 +4,7 @@ import Wallet from "../models/Wallet";
 import Transaction, { TransactionType, TransactionStatus } from "../models/Transaction";
 import Referral from "../models/Referral";
 import User from "../models/User";
+import SharkModel, { IShark } from "../models/Shark"; // Import the new Shark model
 import { connectDb } from "../utils/db";
 import QRCode from "qrcode";
 
@@ -73,7 +74,16 @@ router.post("/buy", async (req, res) => {
 
     const user = await User.findOne({ phone });
     if (user?.referrer) {
-      const rewardAmount = 150;
+      // Use the configured referral bonus amount, with a default fallback if not set
+      const configuredBonusAmount = process.env.REFERRAL_BONUS_AMOUNT;
+      let rewardAmount = 150; // Default fallback, ideally manage this default centrally if possible
+      if (configuredBonusAmount && !isNaN(Number(configuredBonusAmount)) && Number(configuredBonusAmount) > 0) {
+        rewardAmount = Number(configuredBonusAmount);
+      } else {
+        console.warn(
+          `REFERRAL_BONUS_AMOUNT not set, invalid, or zero in .env for shark/buy route. Using default: ${rewardAmount}. Check .env file.`
+        );
+      }
 
       const rewardTransaction = new Transaction({
         phone: user.referrer,
@@ -168,68 +178,60 @@ router.get("/history/:phone", async (req, res) => {
 
 // Get all investment levels and sharks
 router.get("/levels", async (req, res) => {
-  // In a real app, this data would come from a database or configuration file
-  // For now, using the hardcoded structure similar to the initial frontend
-  const mockLevelData = [
-    {
-      level: 1,
-      sharks: [
-        {
-          id: "shark-a-server", // Ensure IDs are unique if needed
-          title: "Shark A (from API)",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 500,
-          total: 5400,
-          daily: 60,
-          endDay: 90,
-        },
-        {
-          id: "shark-b-server",
-          title: "Shark B (from API)",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 1100,
-          total: 10800,
-          daily: 120,
-          endDay: 90,
-        },
-      ],
-    },
-    {
-      level: 2,
-      sharks: [
-        {
-          id: "shark-c-server",
-          title: "Shark C (from API)",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 2100,
-          total: 21600,
-          daily: 240,
-          endDay: 90,
-        },
-      ],
-    },
-    {
-      level: 3,
-      sharks: [
-        {
-          id: "shark-e-server",
-          title: "Shark E (Demo)",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 2000,
-          total: 4440,
-          daily: 888,
-          endDay: 5,
-        },
-      ],
-    },
-  ];
   try {
-    // await connectDb(); // If fetching from DB
-    // const levels = await SomeLevelModel.find().populate('sharks'); // Example DB query
-    res.json({ levels: mockLevelData });
+    await connectDb();
+    // USER ACTION REQUIRED: Ensure you have data in the 'sharks' collection in MongoDB.
+    // Each document should follow the IShark interface (title, image, price, totalReturn, dailyIncome, durationDays, levelNumber).
+    const allSharksFromDB = await SharkModel.find().sort({ levelNumber: 1, price: 1 }).lean();
+
+    if (!allSharksFromDB || allSharksFromDB.length === 0) {
+      // No sharks found in the database, return empty levels array
+      // This allows frontend to display "No plans available"
+      return res.json({ levels: [] });
+    }
+
+    // Group sharks by levelNumber
+    const levelsMap = new Map<number, any[]>();
+    allSharksFromDB.forEach(shark => {
+      const level = shark.levelNumber;
+      if (!levelsMap.has(level)) {
+        levelsMap.set(level, []);
+      }
+      // Map to the structure expected by the frontend (Dashboard.tsx and Plans.tsx)
+      // Note: IShark model uses totalReturn, dailyIncome, durationDays. Frontend expects total, daily, endDay.
+      levelsMap.get(level)?.push({
+        id: shark._id.toString(), // Use MongoDB _id as id
+        title: shark.title,
+        image: shark.image,
+        price: shark.price,
+        total: shark.totalReturn, // Map from totalReturn
+        daily: shark.dailyIncome, // Map from dailyIncome
+        endDay: shark.durationDays, // Map from durationDays
+      });
+    });
+
+    // Convert map to the array structure expected by frontend
+    const structuredLevels = Array.from(levelsMap.entries()).map(([levelNumber, sharks]) => ({
+      level: levelNumber,
+      sharks: sharks,
+    })).sort((a, b) => a.level - b.level); // Ensure levels are sorted
+
+    res.json({ levels: structuredLevels });
+
   } catch (error: any) {
-    console.error("Error fetching levels:", error);
-    res.status(500).json({ error: "Failed to fetch investment levels" });
+    console.error("Error fetching levels from DB:", error);
+    // It's important to also inform the user that data needs to be added to the DB if that's a likely cause.
+    // However, a generic error is also needed for other cases.
+    let errorMessage = "Failed to fetch investment levels.";
+    if (error.message && error.message.includes("ECONNREFUSED")) {
+        errorMessage = "Database connection refused. Please ensure MongoDB is running and accessible.";
+    } else if (!allSharksFromDB || allSharksFromDB.length === 0) {
+        // This case is now handled above by returning empty levels.
+        // Kept for context, but the specific error message here might not be reached if the above check is effective.
+        errorMessage = "No investment plans found in the database. Please add data to the 'sharks' collection.";
+    }
+
+    res.status(500).json({ error: errorMessage, details: error.message });
   }
 });
 
