@@ -30,7 +30,7 @@ const App = () => (
         <UserProvider>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />}/>
           <Route path="/profile" element={<Profile />} />
           <Route path="/invite" element={<Invite />} />
           <Route path="/account-records" element={<AccountRecords />} />

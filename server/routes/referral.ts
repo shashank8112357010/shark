@@ -4,12 +4,23 @@ import Referral from '../models/Referral';
 import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
 import { connectDb } from '../utils/db';
 
+const router = Router();
+// GET /api/referrals?referrer=INVITECODE
+// Returns all users referred by this invite code
+router.get('/api/referrals', async (req, res) => {
+  await connectDb();
+  const { referrer } = req.query;
+  if (!referrer) return res.status(400).json({ error: 'Missing referrer code' });
+  const referredUsers = await User.find({ referrer }).select('phone created');
+  res.json({ referred: referredUsers });
+});
+
 // Helper function to generate unique transaction ID
 function generateTransactionId() {
   return `TX-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
-const router = Router();
+
 
 // Calculate dynamic referral reward based on transaction amount
 function calculateReferralReward(transactionAmount: number): number {

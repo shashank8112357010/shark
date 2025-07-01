@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { connectDb } from '../utils/db';
 import Withdrawal from '../models/Withdrawal';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 import Transaction from '../models/Transaction';
 import { TransactionType, TransactionStatus } from '../models/Transaction';
+import bcrypt from "bcryptjs";
 
 const router = Router();
 
@@ -29,6 +30,10 @@ router.get("/:phone/history", async (req, res) => {
 
 // Get withdrawal limits and rules
 router.get("/:phone/limits", async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
   await connectDb();
   try {
     const user = await User.findOne({ phone: req.params.phone });
@@ -91,11 +96,15 @@ router.post("/request", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Verify password
-    if (!user.withdrawalPassword || !user.verifyPassword(password)) {
+    
+    // Verify password (async bcrypt)
+    const isValid = await bcrypt.compare(password, user.withdrawalPassword);
+    if (!user.withdrawalPassword || !isValid) {
       return res.status(401).json({ error: "Invalid withdrawal password" });
     }
 
+
+    
     // Check wallet balance
     const wallet = await Transaction.aggregate([
       { $match: { phone } },
@@ -105,6 +114,9 @@ router.post("/request", async (req, res) => {
       }}
     ]);
     const balance = wallet[0]?.balance || 0;
+    console.log('wallet aggregation result:', wallet);
+    console.log('calculated balance:', balance);
+    console.log('amount requested:', amount);
 
     // Calculate tax and net amount
     const tax = amount * 0.15;

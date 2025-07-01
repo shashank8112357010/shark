@@ -95,12 +95,6 @@ const Profile = () => {
       isActive: location.pathname === "/account-records",
     },
     {
-      icon: CreditCard,
-      label: "My bank and password",
-      path: "/bank-info", // Assuming this page exists or will be created
-      isActive: location.pathname === "/bank-info",
-    },
-    {
       icon: FileText,
       label: "Invite Code",
       path: "/invite",
@@ -116,11 +110,24 @@ const Profile = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    // Potentially call a context logout function if it exists to clear context state
-    // For now, handleStateChange might be for global state updates or could be removed if UserContext handles it
     handleStateChange();
     navigate("/");
   };
+
+  // Dynamic invite link and QR code
+  const inviteCode = userData?.inviteCode;
+  const inviteLink = `${window.location.origin}/register?invite_code=${inviteCode}`;
+
+  // Fetch referrals
+  const [referrals, setReferrals] = useState([]);
+useEffect(() => {
+    if (inviteCode) {
+      fetch(`/api/referrals?referrer=${inviteCode}`)
+        .then(res => res.json())
+        .then(data => setReferrals(data.referred || []))
+        .catch(() => setReferrals([]));
+    }
+  }, [inviteCode]);
 
   const displayBalance = userData?.balance?.toFixed(2) || "0.00";
   const displayRecharge = totalRecharge.toFixed(2);

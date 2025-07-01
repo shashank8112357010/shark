@@ -94,7 +94,6 @@ const Recharge = () => {
 
   return (
     <Layout 
-     
       className="scroll-smooth no-overscroll"
     >
       <div className="px-6 py-6 space-y-6">
@@ -104,7 +103,11 @@ const Recharge = () => {
           <Input
             type="number"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              console.log(e.target.value);
+              
+              setAmount(e.target.value)
+            }}
             className="h-16 text-xl text-center border-gray-300 rounded-lg "
             placeholder="Enter amount"
           />

@@ -7,6 +7,7 @@ export interface IUser extends Document {
   inviteCode: string;
   referrer?: string;
   created: Date;
+  verifyPassword(password: string): boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -18,4 +19,13 @@ const UserSchema = new Schema<IUser>({
   created: { type: Date, default: Date.now },
 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+import bcrypt from 'bcryptjs';
+
+// Add instance method for withdrawal password verification
+UserSchema.methods.verifyPassword = function (password: string) {
+  // Returns a promise for async bcrypt comparison
+  return bcrypt.compare(password, this.withdrawalPassword);
+};
+
+const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+export default User;

@@ -29,24 +29,34 @@ const Layout = ({
         {/* Fixed Header */}
         <div className="flex-shrink-0 text-black relative z-30">
           <div className="relative h-48 bg-gradient-to-br from-shark-blue to-shark-blue-dark overflow-hidden">
-          {/* Background pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50"></div>
+            {/* Background video */}
+            <video
+              className="absolute inset-0 w-full h-full object-cover z-0"
+              src="/shark.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+            {/* Background pattern overlays video */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/50 to-cyan-400/50 z-10"></div>
 
-          {/* Shark branding */}
-          <div className="absolute bottom-6 left-6">
-            <div className="text-white text-4xl font-bold italic">Shark</div>
-            <div className="text-white/80 text-base">Ocean Investment</div>
+            {/* Shark branding */}
+            <div className="absolute bottom-6 left-6 z-20">
+              <div className="text-white text-4xl font-bold italic">Shark</div>
+              <div className="text-white/80 text-base">Ocean Investment</div>
+            </div>
+            {/* User Info */}
+            <div className="absolute top-6 right-6 z-20">
+              {userData && <UserInfo
+                phone={userData.phone.replace(/^[\d]{2}(\d{6})\d{2}$/, '$1****$3')}
+                balance={balance}
+                referrals={currentReferrals}
+                loading={loading}
+              />}
+            </div>
           </div>
-          {/* User Info */}
-          <div className="absolute top-6 right-6">
-            {userData && <UserInfo
-              phone={userData.phone.replace(/^\d{2}(\d{6})\d{2}$/, '$1****$3')}
-              balance={balance}
-              referrals={currentReferrals}
-              loading={loading}
-            />}
-          </div>
-        </div></div>
+        </div>
 
         {/* Scrollable Content Area */}
         <div
@@ -70,9 +80,4 @@ const Layout = ({
   );
 };
 
-export default memo(Layout, (prevProps, nextProps) => {
-  return (
-    prevProps.hideBottomNav === nextProps.hideBottomNav &&
-    prevProps.className === nextProps.className
-  );
-});
+export default Layout

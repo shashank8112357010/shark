@@ -43,6 +43,4 @@ withdrawalSchema.pre("save", function(next) {
   next();
 });
 
-const Withdrawal = mongoose.model("Withdrawal", withdrawalSchema);
-
-export default Withdrawal;
+export default mongoose.models.Withdrawal || mongoose.model('Withdrawal', withdrawalSchema);

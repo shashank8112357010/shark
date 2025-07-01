@@ -10,6 +10,7 @@ interface LevelCardProps {
   total: number;
   daily: number;
   endDay: number;
+  isLocked: boolean;
   onBuy: () => void;
   buyLoading?: boolean;
 }
@@ -19,6 +20,7 @@ const LevelCard = ({
   title,
   image,
   price,
+  isLocked,
   total,
   daily,
   endDay,
@@ -64,13 +66,22 @@ const LevelCard = ({
           </div>
         </div>
 
-        <Button
-          onClick={onBuy}
-          disabled={buyLoading}
-          className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm flex items-center justify-center"
-        >
-          {buyLoading ? <LoadingSpinner size={20} /> : "Buy now"}
-        </Button>
+        {isLocked ? (
+          <Button
+            disabled
+            className="w-full h-10 bg-gray-400 text-white font-medium rounded-md text-sm flex items-center justify-center opacity-70 cursor-not-allowed"
+          >
+            <Lock size={18} className="mr-2" /> Locked
+          </Button>
+        ) : (
+          <Button
+            onClick={onBuy}
+            disabled={buyLoading}
+            className="w-full h-10 bg-shark-blue hover:bg-shark-blue-dark text-white font-medium rounded-md text-sm flex items-center justify-center"
+          >
+            {buyLoading ? <LoadingSpinner size={20} /> : "Buy now"}
+          </Button>
+        )}
       </div>
     </div>
   );

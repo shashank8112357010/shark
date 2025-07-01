@@ -24,6 +24,7 @@ interface Shark {
   total: number;
   daily: number;
   endDay: number;
+  isLocked : boolean
 }
 
 interface LevelData {
@@ -37,8 +38,7 @@ const Dashboard = () => {
 
   // State for dynamic level data
   const [allLevelData, setAllLevelData] = useState<LevelData[]>([]);
-  const [levelsLoading, setLevelsLoading] = useState(true);
-  const [levelsError, setLevelsError] = useState<string | null>(null);
+  const [levelsLoading, setLevelsLoading] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState(1);
 
   // Existing states
@@ -54,23 +54,29 @@ const Dashboard = () => {
       level: 1,
       sharks: [
         {
+          
           id: "shark-a",
           title: "Shark A",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 500,
-          total: 5400,
-          daily: 60,
-          endDay: 90,
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 499,
+          total: 14880,
+          daily: 124,
+          endDay: 120,
+          isLocked : false
         },
         {
           id: "shark-b",
           title: "Shark B",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 1100,
-          total: 10800,
-          daily: 120,
-          endDay: 90,
-        },
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 1990,
+          total: 57530,
+          daily: 523,
+          endDay: 110,
+          isLocked : false
+        }
+       
       ],
     },
     {
@@ -79,83 +85,154 @@ const Dashboard = () => {
         {
           id: "shark-c",
           title: "Shark C",
-          image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
-          price: 2100,
-          total: 21600,
-          daily: 240,
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 4980,
+          total: 13830,
+          daily: 1383,
+          endDay: 100,
+          isLocked : false
+        },
+        {
+          id: "shark-d",
+          title: "Shark D",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 16890,
+          total: 496700,
+          daily: 4967,
+          endDay: 100,
+          isLocked : false
+        },
+        {
+          id: "shark-vip-1",
+          title: "Shark VIP 1",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 5000,
+          total: 9000,
+          daily: 3000,
+          endDay: 3,
+          isLocked : true
+        },
+      ],
+    },
+    {
+      level: 3,
+      sharks: [
+        {
+          id: "shark-e",
+          title: "Shark E",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 29800,
+          total: 838080,
+          daily: 9312,
           endDay: 90,
+          isLocked : false
+        },
+        {
+          id: "shark-f",
+          title: "Shark F",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 46800,
+          total: 1290960,
+          daily: 16137,
+          endDay: 80,
+          isLocked : false
+        },
+        {
+          id: "shark-vip-2",
+          title: "Shark VIP 2",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 10000,
+          total: 18000,
+          daily: 6000,
+          endDay: 3,
+          isLocked : true
+        },
+      ],
+    },
+    {
+      level: 4,
+      sharks: [
+        {
+          id: "shark-g",
+          title: "Shark G",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 79800,
+          total: 2234400,
+          daily: 31920,
+          endDay: 70,
+          isLocked : false
+        },
+        {
+          id: "shark-h",
+          title: "Shark H",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 129800,
+          total: 1947000,
+          daily: 64900,
+          endDay: 30,
+          isLocked : false
+        },
+        {
+          id: "shark-vip-3",
+          title: "Shark VIP 3",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 20000,
+          total: 36000,
+          daily: 12000,
+          endDay: 3,
+          isLocked : true
+        },
+      ],
+    },
+    {
+      level: 5,
+      sharks: [
+        {
+          id: "shark-i",
+          title: "Shark I",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 158000,
+          total: 21066600,
+          daily: 105333,
+          endDay: 200,
+          isLocked : false
+        },
+        
+        {
+          id: "shark-vip-4",
+          title: "Shark VIP 4",
+          image:
+            "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
+          price: 30000,
+          total: 54000,
+          daily: 18000,
+          endDay: 3,
+          isLocked : true
         },
       ],
     },
   ];
 
-  // Effect to fetch level data
+  // Always use mockLevelData for level data
   useEffect(() => {
-    const fetchLevelData = async () => {
-      setLevelsLoading(true);
-      setLevelsError(null);
-      let useMock = false; // Flag to decide if we need to use mock data
-
-      try {
-        const response = await fetch('/api/shark/levels');
-        if (!response.ok) {
-          // API responded with an error (4xx, 5xx)
-          const errorData = await response.json().catch(() => ({ message: "Unknown API error" }));
-          setLevelsError(errorData.error || errorData.message || "Failed to fetch levels from API.");
-          console.error('API Error fetching levels:', errorData);
-          useMock = true; // Mark to use mock data due to API error
-        } else {
-          // API responded successfully
-          const data = await response.json();
-          const fetchedLevels = data.levels || [];
-
-          if (fetchedLevels.length > 0) {
-            setAllLevelData(fetchedLevels);
-            if (fetchedLevels.find(level => level.level === selectedLevel)) {
-              // Keep current selectedLevel if it exists in new data
-            } else {
-              setSelectedLevel(fetchedLevels[0].level); // Set to first level from API
-            }
-            // Successfully loaded live data
-          } else {
-            // API success, but no levels returned (e.g., DB is empty)
-            setLevelsError("No investment levels found from the server."); // Informative message
-            console.log('No levels from API, will use mock data as fallback.');
-            useMock = true; // Mark to use mock data as live data is empty
-          }
-        }
-      } catch (error: any) {
-        // Network error or other fetch-related error
-        setLevelsError(error.message || "Could not connect to fetch levels.");
-        console.error('Network or other error fetching levels:', error);
-        useMock = true; // Mark to use mock data due to fetch error
-      } finally {
-        if (useMock) {
-          toast({
-            variant: "default", // Or "destructive" if preferred
-            title: "Displaying Example Data",
-            description: levelsError || "Could not fetch live investment data. Showing example plans.",
-          });
-          setAllLevelData(mockLevelData); // Set mock data
-          if (mockLevelData.length > 0) {
-            // Ensure selectedLevel is valid for mockData
-             if (mockLevelData.find(level => level.level === selectedLevel)) {
-              // Keep current selectedLevel if it exists in mock data
-            } else {
-              setSelectedLevel(mockLevelData[0].level); // Set selected level from mock data
-            }
-          } else {
-            setSelectedLevel(1); // Fallback if mock data is also empty
-            setAllLevelData([]); // Ensure allLevelData is empty if mock is empty
-            setLevelsError(levelsError || "No example plans available either.");
-          }
-        }
-        setLevelsLoading(false);
-      }
-    };
-
-    fetchLevelData();
-  }, [toast]); // Removed levelsError from dependency array to prevent re-fetch loops on error
+    setLevelsLoading(true);
+    setAllLevelData(mockLevelData);
+    setLevelsLoading(false);
+    if (mockLevelData.length > 0) {
+      setLevelsLoading(false);
+      setSelectedLevel(mockLevelData[0].level);
+    }
+  }, []);
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
@@ -164,7 +241,7 @@ const Dashboard = () => {
       localStorage.setItem("hasSeenWelcome", "true");
     }
 
-    const u = JSON.parse(localStorage.getItem("user") || '{}');
+    const u = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(u);
     if (u.phone) {
       fetch(`/api/referral/count/${u.phone}`)
@@ -206,15 +283,17 @@ const Dashboard = () => {
   };
 
   // Get current level data
-  const currentLevelSharkData = allLevelData.find((level) => level.level === selectedLevel) || {
-    level: selectedLevel, // Fallback to selectedLevel if not found, though should ideally match
-    sharks: []
+  const currentLevelSharkData = allLevelData.find(
+    (level) => level.level === selectedLevel,
+  ) || {
+    level: 0, // Fallback to selectedLevel if not found, though should ideally match
+    sharks: mockLevelData[0].sharks,
   };
 
   useEffect(() => {
     // This effect is for logging, can be kept or removed
     console.log("Selected Level:", selectedLevel);
-    console.log("Current Sharks Data:", currentLevelSharkData);
+    console.log("Current Sharks Data:", JSON.stringify(currentLevelSharkData));
   }, [selectedLevel, currentLevelSharkData]);
 
   return (
@@ -232,7 +311,9 @@ const Dashboard = () => {
           ) : (
             <div className="overflow-x-auto">
               <div className="flex space-x-3 p-2 min-w-max">
-                {allLevelData.map((levelInfo) => {
+                {mockLevelData.map((levelInfo) => {
+                  console.log("Level info", JSON.stringify(levelInfo));
+
                   const isSelected = selectedLevel === levelInfo.level;
                   return (
                     <button
@@ -241,10 +322,11 @@ const Dashboard = () => {
                         setSelectedLevel(levelInfo.level);
                         setBuyLoading(null);
                       }}
-                      className={`relative flex-shrink-0 px-4 py-1 cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${isSelected
+                      className={`relative flex-shrink-0 px-4 py-1 cursor-pointer rounded-lg border-2 transition-all active:scale-95 focus-visible ${
+                        isSelected
                           ? "border-shark-blue bg-shark-blue text-white"
                           : "border-shark-blue text-shark-blue bg-white hover:bg-shark-blue hover:text-white"
-                        }`}
+                      }`}
                     >
                       <div className="text-center">
                         <div className="text-sm font-medium">
@@ -281,31 +363,25 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                
-                {allLevelData
-                  .find((level) => level.level === selectedLevel)
-                  ?.sharks.map((shark) => {
-                    console.log(shark , "shark");
-                    
-                    const isCurrentSharkLoading = buyLoading === `${selectedLevel}-${shark.id}`;
-                    console.log(allLevelData ," allLevelData");
-                    
-                    return (
-                      <LevelCard
-                        key={shark.id}
-                        level={selectedLevel}
-                        title={shark.title}
-                        image={shark.image}
-                        price={shark.price}
-                        total={shark.total}
-                        daily={shark.daily}
-                        endDay={shark.endDay}
-                        onBuy={() => handleBuyLevel(shark)}
-                        buyLoading={isCurrentSharkLoading}
-                      />
-                    );
-                  })
-                }
+                {currentLevelSharkData.sharks.map((shark) => {
+                  const isCurrentSharkLoading =
+                    buyLoading === `${selectedLevel}-${shark.id}`;
+                  return (
+                    <LevelCard
+                      key={shark.id}
+                      level={selectedLevel}
+                      title={shark.title}
+                      image={shark.image}
+                      price={shark.price}
+                      total={shark.total}
+                      daily={shark.daily}
+                      endDay={shark.endDay}
+                      isLocked={shark.isLocked}
+                      onBuy={() => handleBuyLevel(shark)}
+                      buyLoading={isCurrentSharkLoading}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>

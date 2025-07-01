@@ -5,6 +5,7 @@ import authRouter from "./routes/auth";
 import walletRouter from "./routes/wallet";
 import sharkRouter from "./routes/shark";
 import referralRouter from "./routes/referral";
+import withdrawRouter from "./routes/withdraw";
 
 export function createServer() {
   const app = express();
@@ -32,6 +33,7 @@ export function createServer() {
 
   // Add referral routes
   app.use("/api/referral", referralRouter);
+  app.use("/api/withdraw", withdrawRouter)
 
   return app;
 }

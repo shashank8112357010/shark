@@ -37,7 +37,8 @@ interface WithdrawalHistory {
 const Withdraw = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userData } = useUser();
+  const { userData, loading: userLoading } = useUser();
+  const userLoadingVar = userLoading; // Move useUser().loading to a variable
   const [amount, setAmount] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -71,11 +72,21 @@ const Withdraw = () => {
       let errorMessages: string[] = [];
 
       if (!limitsRes.ok) {
-        const errData = await limitsRes.json().catch(() => ({ error: "Failed to parse limits error" }));
+        let errData;
+        try {
+          errData = await limitsRes.json();
+        } catch {
+          errData = { error: "Server error or not JSON" };
+        }
         errorMessages.push(`Limits: ${errData.error || limitsRes.statusText}`);
       }
       if (!historyRes.ok) {
-        const errData = await historyRes.json().catch(() => ({ error: "Failed to parse history error" }));
+        let errData;
+        try {
+          errData = await historyRes.json();
+        } catch {
+          errData = { error: "Server error or not JSON" };
+        }
         errorMessages.push(`History: ${errData.error || historyRes.statusText}`);
       }
 
@@ -114,11 +125,11 @@ const Withdraw = () => {
       // If no user phone, and context is not loading, means user is not logged in.
       // The main component return handles showing "Not Logged In" UI.
       // We just need to make sure loading is false.
-       if (!userData && !useUser().loading) { // Check if context itself is done loading
+       if (!userData && !userLoading) { // Check if context itself is done loading
          setPageLoading(false);
        }
     }
-  }, [userData, fetchWithdrawalDataCallback, useUser().loading]); // Add useUser().loading to wait for context
+  }, [userData, fetchWithdrawalDataCallback, userLoading]); // Add userLoading to wait for context
 
   const handleWithdraw = async () => {
     setSubmitLoading(true);
@@ -152,7 +163,7 @@ const Withdraw = () => {
         throw new Error(`You can withdraw up to ₹${limits.remainingLimit} today`);
       }
 
-      const res = await fetch('/api/withdraw', {
+      const res = await fetch('/api/withdraw/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -173,7 +184,7 @@ const Withdraw = () => {
       });
       setAmount("");
       setPassword("");
-      await fetchWithdrawalData();
+      await fetchWithdrawalDataCallback();
     } catch (err: any) {
       toast({
         variant: "destructive",

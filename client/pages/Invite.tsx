@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Header from "@/components/Header";
@@ -7,22 +7,10 @@ import { Plus } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useStateChange } from "@/hooks/useStateChange";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
+
 
 const Invite = () => {
-  const navigate = useNavigate();
-import { useState, useEffect } from "react"; // Import useEffect
-import { useNavigate } from "react-router-dom";
-import Layout from "@/components/Layout";
-// import Header from "@/components/Header"; // Header not explicitly used here
-// import { Button } from "@/components/ui/button"; // Button not explicitly used here
-// import { Plus } from "lucide-react"; // Plus not explicitly used here
-import { QRCodeCanvas } from "qrcode.react";
-import { useStateChange } from "@/hooks/useStateChange";
-import { useUser } from "@/contexts/UserContext";
-import { useToast } from "@/components/ui/use-toast"; // For error notifications
-
-const Invite = () => {
-  const navigate = useNavigate();
   const { toast } = useToast(); // Initialize toast
   const { handleStateChange } = useStateChange();
   const { userData, loading: userLoading } = useUser();
