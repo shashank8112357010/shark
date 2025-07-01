@@ -91,7 +91,7 @@ const Dashboard = () => {
           total: 13830,
           daily: 1383,
           endDay: 100,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-d",
@@ -102,7 +102,7 @@ const Dashboard = () => {
           total: 496700,
           daily: 4967,
           endDay: 100,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-vip-1",
@@ -129,7 +129,7 @@ const Dashboard = () => {
           total: 838080,
           daily: 9312,
           endDay: 90,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-f",
@@ -140,7 +140,7 @@ const Dashboard = () => {
           total: 1290960,
           daily: 16137,
           endDay: 80,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-vip-2",
@@ -167,7 +167,7 @@ const Dashboard = () => {
           total: 2234400,
           daily: 31920,
           endDay: 70,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-h",
@@ -178,7 +178,7 @@ const Dashboard = () => {
           total: 1947000,
           daily: 64900,
           endDay: 30,
-          isLocked : false
+          isLocked : true
         },
         {
           id: "shark-vip-3",
@@ -205,7 +205,7 @@ const Dashboard = () => {
           total: 21066600,
           daily: 105333,
           endDay: 200,
-          isLocked : false
+          isLocked : true
         },
         
         {
