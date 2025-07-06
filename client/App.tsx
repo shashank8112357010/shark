@@ -16,6 +16,10 @@ import Channel from "./pages/Channel";
 import Online from "./pages/Online";
 import HistoryPage from "./pages/History"; // Import History page
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRechargeRequests from "./pages/AdminRechargeRequests";
+import AdminWithdrawals from "./pages/AdminWithdrawals";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -40,6 +44,11 @@ const App = () => (
           <Route path="/channel" element={<Channel />} />
           <Route path="/online" element={<Online />} />
           <Route path="/history" element={<HistoryPage />} /> {/* Add History page route */}
+          {/* Admin routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/recharge-requests" element={<AdminRechargeRequests />} />
+          <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

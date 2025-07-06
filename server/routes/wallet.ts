@@ -1,6 +1,7 @@
 import { Router } from "express";
 import Wallet from '../models/Wallet';
 import Transaction, { TransactionType } from '../models/Transaction'; // Import Transaction model and type
+import RechargeRequest from '../models/RechargeRequest';
 import { connectDb } from '../utils/db';
 
 const router = Router();
@@ -12,7 +13,88 @@ router.get("/balance/:phone", async (req, res) => {
   res.json({ balance: wallet ? wallet.balance : 0 });
 });
 
-// Recharge wallet
+// Submit recharge request
+router.post("/recharge-request", async (req, res) => {
+  try {
+    await connectDb();
+    const { phone, amount, utrNumber, qrCode } = req.body;
+    
+    if (!phone || !amount || !utrNumber || !qrCode) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Phone, amount, UTR number and QR code are required" 
+      });
+    }
+
+    // Check if UTR number already exists
+    const existingRequest = await RechargeRequest.findOne({ utrNumber });
+    if (existingRequest) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "UTR number already exists" 
+      });
+    }
+
+    const rechargeRequest = new RechargeRequest({
+      phone,
+      amount: Number(amount),
+      utrNumber,
+      qrCode
+    });
+
+    await rechargeRequest.save();
+
+    res.json({ 
+      success: true, 
+      message: "Recharge request submitted successfully. Please wait for admin approval.",
+      requestId: rechargeRequest._id
+    });
+  } catch (error: any) {
+    console.error('Recharge request error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to submit recharge request",
+      details: error.message 
+    });
+  }
+});
+
+// Get recharge requests for a user
+router.get("/recharge-requests/:phone", async (req, res) => {
+  try {
+    await connectDb();
+    const { phone } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    const rechargeRequests = await RechargeRequest.find({ phone })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip((page - 1) * limit);
+
+    const total = await RechargeRequest.countDocuments({ phone });
+
+    res.json({
+      success: true,
+      rechargeRequests,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error: any) {
+    console.error('Get recharge requests error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch recharge requests",
+      details: error.message 
+    });
+  }
+});
+
+// Recharge wallet (direct - for admin use)
 router.post("/recharge", async (req, res) => {
   await connectDb();
   const { phone, amount } = req.body;

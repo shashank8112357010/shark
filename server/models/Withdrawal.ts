@@ -23,6 +23,21 @@ const withdrawalSchema = new mongoose.Schema({
     enum: ["PENDING", "APPROVED", "REJECTED", "COMPLETED"],
     default: "PENDING",
   },
+  adminNotes: {
+    type: String,
+  },
+  reviewedBy: {
+    type: String, // Admin email who reviewed
+  },
+  reviewedAt: {
+    type: Date,
+  },
+  paymentProof: {
+    type: String, // URL or base64 of payment screenshot
+  },
+  paymentUtr: {
+    type: String, // UTR number for payment
+  },
   transactionId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Transaction",

@@ -162,6 +162,23 @@ const Invite = () => {
                 {inviteLink}
               </a>
             </div>
+            <div className="mt-2 flex justify-center">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyLink}
+                className="mr-2"
+              >
+                Copy Link
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCopyCode}
+              >
+                Copy Code
+              </Button>
+            </div>
             <div className="mt-2 text-xs text-gray-500 text-center">
               Or share this link/QR with your friends to register
             </div>

@@ -60,8 +60,8 @@ const Dashboard = () => {
           image:
             "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 499,
-          total: 14880,
-          daily: 124,
+          total: 10800,
+          daily: 90,
           endDay: 120,
           isLocked : false
         },
@@ -71,8 +71,8 @@ const Dashboard = () => {
           image:
             "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
           price: 1990,
-          total: 57530,
-          daily: 523,
+          total: 37400,
+          daily: 340,
           endDay: 110,
           isLocked : false
         }

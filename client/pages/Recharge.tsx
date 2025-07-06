@@ -5,18 +5,23 @@ import Header from "@/components/Header";
 import UserInfo from "@/components/UserInfo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import LoadingSpinner from "@/components/ui/LoadingSpinner"; // Import spinner
-import { FileText, ChevronDown } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { CreditCard, Check, AlertCircle, Copy } from "lucide-react";
+import qrImage from '/public/qr.jpeg';
 import { useStateChange } from "@/hooks/useStateChange";
 import { useUser } from "@/contexts/UserContext";
-import { useToast } from "@/components/ui/use-toast"; // Import useToast
+import { useToast } from "@/components/ui/use-toast";
 
 const Recharge = () => {
   const navigate = useNavigate();
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
   const [amount, setAmount] = useState("1000");
-  // const [selectedMethod, setSelectedMethod] = useState("Recharge X"); // This state was unused.
-  // const { handleStateChange } = useStateChange(); // This hook was unused in this component.
+  const [utrNumber, setUtrNumber] = useState("");
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { userData } = useUser();
 
   const rechargeMethods = [
@@ -27,13 +32,36 @@ const Recharge = () => {
   ];
 
   const [loading, setLoading] = useState(false);
-  // Removed error and success states, will use toasts instead
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: "Text copied to clipboard",
+    });
+  };
+
+  const handleProceedToPayment = () => {
+    if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: "Please enter a valid amount",
+      });
+      return;
+    }
+    setShowQRDialog(true);
+  };
+
+  const handlePaymentComplete = () => {
+    setShowQRDialog(false);
+    setShowConfirmDialog(true);
+  };
 
   const handleRecharge = async () => {
     setLoading(true);
     try {
       if (!userData?.phone) {
-        // This should ideally be handled by routing/auth guards
         toast({
           variant: "destructive",
           title: "Error",
@@ -44,48 +72,50 @@ const Recharge = () => {
       }
       
       const amountValue = parseInt(amount);
-      if (isNaN(amountValue) || amountValue <= 0) {
+      
+      if (isNaN(amountValue) || amountValue <= 0 || !utrNumber.trim()) {
         toast({
           variant: "destructive",
-          title: "Invalid Amount",
-          description: "Please enter a valid positive amount.",
+          title: "Invalid Input",
+          description: "Please ensure amount and UTR number are filled correctly.",
         });
         setLoading(false);
         return;
       }
 
-      const res = await fetch("/api/wallet/recharge", {
+      const res = await fetch("/api/wallet/recharge-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: userData.phone, amount: amountValue }),
+        body: JSON.stringify({ 
+          phone: userData.phone, 
+          amount: amountValue, 
+          utrNumber: utrNumber.trim(), 
+          qrCode: qrImage 
+        }),
       });
 
-      const data = await res.json(); // Try to parse JSON regardless of res.ok to get error messages
+      const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Recharge failed due to server error");
-      }
-
-      if (!data.success) {
-        // This case might be redundant if !res.ok already covers it
-        throw new Error(data.error || "Recharge processing failed");
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Request failed");
       }
 
       toast({
-        title: "Recharge Successful!",
-        description: `₹${amountValue} has been added to your account.`,
+        title: "Recharge Request Submitted",
+        description: `Your request for ₹${amountValue} has been submitted. Please wait for admin approval.`,
       });
-      // Potentially update user balance in context here
-      // Example: refreshUserData();
-
+      
+      setShowConfirmDialog(false);
+      setUtrNumber("");
+      
       setTimeout(() => {
         navigate("/dashboard");
-      }, 1500); // Slightly longer timeout for toast visibility
+      }, 2000);
     } catch (err: any) {
       toast({
         variant: "destructive",
-        title: "Recharge Failed",
-        description: err.message || "Something went wrong during recharge.",
+        title: "Error",
+        description: err.message || "Something went wrong.",
       });
     } finally {
       setLoading(false);
@@ -93,99 +123,205 @@ const Recharge = () => {
   };
 
   return (
-    <Layout 
-      className="scroll-smooth no-overscroll"
-    >
+    <Layout className="scroll-smooth no-overscroll">
       <div className="px-6 py-6 space-y-6">
         {/* Amount Input */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-readable">Recharge</h3>
-          <Input
-            type="number"
-            value={amount}
-            onChange={(e) => {
-              console.log(e.target.value);
-              
-              setAmount(e.target.value)
-            }}
-            className="h-16 text-xl text-center border-gray-300 rounded-lg "
-            placeholder="Enter amount"
-          />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <CreditCard className="h-5 w-5" />
+              <span>Recharge Amount</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="h-16 text-xl text-center border-gray-300 rounded-lg"
+              placeholder="Enter amount"
+            />
+          </CardContent>
+        </Card>
 
-        {/* Payment Method Selection */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-readable">
-            Please choose the pay method
-          </h3>
-          <div className="space-y-3">
-            {rechargeMethods.map((method) => (
-              <label
-                key={method.id}
-                className="flex items-center justify-between bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors card-shadow active:scale-98"
-              >
-                <span className="text-lg text-readable">{method.name}</span>
-                <input
-                  type="radio"
-                  name="rechargeMethod" // Name should be consistent for radio group behavior
-                  value={method.id} // Value could be method.amount for simplicity if id is just amount
-                  checked={amount === method.amount.toString()} // Check against amount state
-                  onChange={(e) => {
-                    // setSelectedMethod(e.target.value); // Keep if selectedMethod state is used elsewhere
-                    setAmount(method.amount.toString());
-                  }}
-                  className="w-6 h-6 text-shark-blue border-2 border-gray-300 focus:ring-shark-blue "
-                />
-              </label>
-            ))}
-          </div>
-        </div>
+        {/* Quick Amount Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Select</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {rechargeMethods.map((method) => (
+                <Button
+                  key={method.id}
+                  variant={amount === method.amount.toString() ? "default" : "outline"}
+                  onClick={() => setAmount(method.amount.toString())}
+                  className="h-12 text-lg"
+                >
+                  {method.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Error/Success Messages are now handled by Toasts */}
-        {/* Confirm Button */}
+        {/* Proceed to Payment Button */}
         <Button
-          onClick={handleRecharge}
-          disabled={loading}
-           className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg active:scale-98 transition-transform flex items-center justify-center"
+          onClick={handleProceedToPayment}
+          className="w-full h-14 bg-shark-blue hover:bg-shark-blue-dark text-white text-lg font-medium rounded-lg"
         >
-           {loading ? <LoadingSpinner size={28} /> : "Confirm Recharge"}
+          <CreditCard className="h-5 w-5 mr-2" />
+          Proceed to UPI Payment
         </Button>
 
         {/* Recharge Rules */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4 text-readable">
-            Recharge Rules
-          </h3>
-          <div className="space-y-3 text-sm text-gray-700 text-readable">
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
-              <span>
-                Confirm the recharge amount and fill in the UTR number correctly
-              </span>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5" />
+              <span>Recharge Rules</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm text-gray-700">
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                <span>Confirm the recharge amount and fill in the UTR number correctly</span>
+              </div>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                <span>Payment will be processed after admin verification</span>
+              </div>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                <span>For recharge questions, please contact customer service</span>
+              </div>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                <span>All transactions are secured and regulated</span>
+              </div>
             </div>
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
-              <span>
-                Every time you recharge, you need to re-acquire the receiving
-                account at the cashier.
-              </span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* QR Code Payment Dialog */}
+      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Scan QR Code to Pay</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* QR Code Display */}
+            <div className="flex justify-center">
+              <div className="bg-white p-4 rounded-lg border-2 border-gray-300">
+                <img 
+                  src={qrImage} 
+                  alt="QR Code for Payment" 
+                  width={192} 
+                  height={192} 
+                  className="mx-auto" 
+                />
+                <p className="text-center text-sm text-gray-500 mt-2">Scan to pay ₹{amount}</p>
+              </div>
             </div>
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
-              <span>
-                For recharge questions, please contact onlinecustomer service.
-              </span>
+
+            {/* Payment Details */}
+            <div className="space-y-3">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <Label className="text-sm font-medium">Amount</Label>
+                <p className="text-lg font-bold text-green-600">₹{amount}</p>
+              </div>
             </div>
-            <div className="flex items-start">
-              <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
-              <span>
-                All funds for the project are regulated by the Indian government
-                bank.
-              </span>
+
+            {/* Instructions */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Payment Instructions:</h4>
+              <ol className="text-sm text-blue-800 space-y-1">
+                <li>1. Open your UPI app (PhonePe, GPay, Paytm, etc.)</li>
+                <li>2. Scan the QR code above</li>
+                <li>3. Verify the amount ₹{amount}</li>
+                <li>4. Complete the payment</li>
+                <li>5. Note down the UTR/Transaction ID</li>
+              </ol>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={() => setShowQRDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handlePaymentComplete} className="flex-1">
+                <Check className="h-4 w-4 mr-2" />
+                Payment Done
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* UTR Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Payment Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-2 mb-2">
+                <Check className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-green-800">Payment Amount</span>
+              </div>
+              <p className="text-2xl font-bold text-green-600">₹{amount}</p>
+            </div>
+
+            <div>
+              <Label htmlFor="utr">UTR/Transaction ID *</Label>
+              <Input
+                id="utr"
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value)}
+                placeholder="Enter 12-digit UTR number"
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                You can find this in your payment app after successful transaction
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <strong>Important:</strong> Your recharge will be processed after admin verification. 
+                This usually takes 5-30 minutes during business hours.
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConfirmDialog(false)} 
+                className="flex-1"
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleRecharge} 
+                disabled={loading || !utrNumber.trim()}
+                className="flex-1"
+              >
+                {loading ? (
+                  <>
+                    <LoadingSpinner size={16} className="mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Request"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
