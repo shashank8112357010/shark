@@ -99,13 +99,7 @@ const Profile = () => {
       label: "Invite Code",
       path: "/invite",
       isActive: location.pathname === "/invite",
-    },
-    {
-      icon: CreditCard,
-      label: "Referral History",
-      path: "/referral-history",
-      isActive: location.pathname === "/referral-history",
-    },
+    }
   ];
 
   const handleLogout = () => {

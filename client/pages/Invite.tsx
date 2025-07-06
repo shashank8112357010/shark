@@ -126,9 +126,7 @@ const Invite = () => {
   };
 
   return (
-    <Layout
-      className="scroll-smooth no-overscroll text-readable"
-    >
+    <Layout className="scroll-smooth no-overscroll text-readable">
       {/* Hero Image */}
       <div className="px-6 py-6">
         <div className="relative h-48 bg-gradient-to-r from-cyan-400 to-teal-500 rounded-xl overflow-hidden">
@@ -143,7 +141,6 @@ const Invite = () => {
           </div>
         </div>
       </div>
-
       {/* Scan & Register Section */}
       <div className="px-6 mt-8 pb-6">
         <div className="text-center">
@@ -153,14 +150,18 @@ const Invite = () => {
               <QRCodeCanvas value={inviteLink} size={192} />
             </div>
             <div className="mt-4">
-              <a
-                href={inviteLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-shark-blue underline text-base break-all"
-              >
-                {inviteLink}
-              </a>
+              {inviteLink ? (
+                <a
+                  href={inviteLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-shark-blue underline text-base break-all"
+                >
+                  {inviteLink}
+                </a>
+              ) : (
+                <span className="text-red-500 text-base">Invite link unavailable. Please check your account or contact support.</span>
+              )}
             </div>
             <div className="mt-2 flex justify-center">
               <Button
@@ -168,6 +169,7 @@ const Invite = () => {
                 variant="outline"
                 onClick={handleCopyLink}
                 className="mr-2"
+                disabled={!inviteLink}
               >
                 Copy Link
               </Button>
@@ -175,10 +177,16 @@ const Invite = () => {
                 size="sm"
                 variant="outline"
                 onClick={handleCopyCode}
+                disabled={!inviteCode}
               >
                 Copy Code
               </Button>
             </div>
+            {!inviteLink && (
+              <div className="mt-2 text-xs text-red-500 text-center">
+                Your invite link is not available. Please ensure your account is fully registered and try again.
+              </div>
+            )}
             <div className="mt-2 text-xs text-gray-500 text-center">
               Or share this link/QR with your friends to register
             </div>
@@ -187,7 +195,6 @@ const Invite = () => {
                 {configLoading ? "Loading bonus info..." : `Earn ₹${referralBonus} for every friend who registers and completes onboarding!`}
               </div>
             )}
-            {/* Fallback or alternative message if bonus is 0 or not loaded and no default is set */}
             {(referralBonus === 0 && !configLoading) && (
                 <div className="mt-2 text-gray-600 text-sm font-semibold">
                     Referral program details are currently unavailable.

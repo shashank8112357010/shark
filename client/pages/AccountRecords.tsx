@@ -52,14 +52,13 @@ const AccountRecords = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
     const fetchTransactions = async () => {
       if (!userData?.phone) {
         setLoading(false);
         setError("User not logged in. Cannot fetch records.");
-        // toast({ variant: "destructive", title: "Error", description: "User not logged in." });
         return;
       }
-
       setLoading(true);
       setError(null);
       try {
@@ -69,9 +68,7 @@ const AccountRecords = () => {
           throw new Error(errorData.error || "Failed to fetch transaction records");
         }
         const data = await response.json();
-
         const backendTransactions: BackendTransaction[] = data.transactions || [];
-
         const formatted = backendTransactions.map((tx): FormattedTransaction => {
           let displayType = tx.type.toUpperCase();
           let isPositive = false;
@@ -91,7 +88,7 @@ const AccountRecords = () => {
               break;
             case BackendTransactionType.PURCHASE:
               displayType = "Plan Purchase";
-              isPositive = false; // Typically a debit
+              isPositive = false;
               break;
             default:
               // Keep original type if not mapped, or handle as needed
@@ -124,8 +121,9 @@ const AccountRecords = () => {
         setLoading(false);
       }
     };
-
     fetchTransactions();
+    interval = setInterval(fetchTransactions, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
   }, [userData, toast]);
 
   const getFilteredTransactions = () => {
