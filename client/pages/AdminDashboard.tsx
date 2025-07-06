@@ -105,21 +105,34 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      
+      if (!token) {
+        console.log('No admin token found, redirecting to login');
+        navigate('/admin/login');
+        return;
+      }
+      
+      console.log('Fetching admin dashboard stats');
       const response = await fetch('/api/admin/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Stats response status:', response.status);
       const data = await response.json();
+      console.log('Stats response data:', data);
 
       if (data.success) {
         setStats(data.stats);
+        console.log('Successfully loaded dashboard stats');
       } else {
         if (response.status === 401) {
+          console.log('Authentication failed, logging out');
           handleLogout();
           return;
         }
+        console.error('Stats API error:', data.error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -127,10 +140,11 @@ const AdminDashboard = () => {
         });
       }
     } catch (error) {
+      console.error('Stats network error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to fetch dashboard stats',
+        title: 'Network Error',
+        description: 'Failed to connect to server. Please check your connection.',
       });
     } finally {
       setLoading(false);

@@ -18,6 +18,7 @@
     "start": "node dist/server/node-build.mjs",
     "test": "vitest --run",
     "create-admin": "tsx server/scripts/createAdmin.ts",
+    "add-test-data": "tsx server/scripts/addTestData.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },

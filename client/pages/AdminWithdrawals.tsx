@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Search, Filter, Check, X, Eye, RefreshCw, Upload, FileImage, Inbox } from 'lucide-react';
@@ -74,6 +73,12 @@ const AdminWithdrawals = () => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
+      if (!token) {
+        console.log('No admin token found, redirecting to login');
+        navigate('/admin/login');
+        return;
+      }
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10'
@@ -83,22 +88,30 @@ const AdminWithdrawals = () => {
         params.append('status', statusFilter);
       }
 
+      console.log('Fetching withdrawals with params:', params.toString());
       const response = await fetch(`/api/admin/withdrawals?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.success) {
-        setWithdrawals(data.withdrawals);
-        setTotalPages(data.pagination.pages);
+        setWithdrawals(data.withdrawals || []);
+        setTotalPages(data.pagination?.pages || 1);
+        console.log('Successfully loaded', data.withdrawals?.length || 0, 'withdrawals');
       } else {
         if (response.status === 401) {
+          console.log('Authentication failed, redirecting to login');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminInfo');
           navigate('/admin/login');
           return;
         }
+        console.error('API error:', data.error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -106,10 +119,11 @@ const AdminWithdrawals = () => {
         });
       }
     } catch (error) {
+      console.error('Network error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to fetch withdrawals',
+        title: 'Network Error',
+        description: 'Failed to connect to server. Please check your connection.',
       });
     } finally {
       setLoading(false);
@@ -341,18 +355,18 @@ const AdminWithdrawals = () => {
               
               <div>
                 <Label htmlFor="status">Status Filter</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="APPROVED">Approved</SelectItem>
-                    <SelectItem value="COMPLETED">Completed</SelectItem>
-                    <SelectItem value="REJECTED">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="status"
+                  className="block w-full mt-1 border rounded px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All statuses</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
               </div>
 
               <div className="flex items-end">

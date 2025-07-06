@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowLeft, Search, Filter, Check, X, Eye, RefreshCw, Inbox } from 'lucide-react';
@@ -68,6 +67,12 @@ const AdminRechargeRequests = () => {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
+      if (!token) {
+        console.log('No admin token found, redirecting to login');
+        navigate('/admin/login');
+        return;
+      }
+      
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10'
@@ -77,22 +82,30 @@ const AdminRechargeRequests = () => {
         params.append('status', statusFilter);
       }
 
+      console.log('Fetching recharge requests with params:', params.toString());
       const response = await fetch(`/api/admin/recharge-requests?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.success) {
-        setRequests(data.rechargeRequests);
-        setTotalPages(data.pagination.pages);
+        setRequests(data.rechargeRequests || []);
+        setTotalPages(data.pagination?.pages || 1);
+        console.log('Successfully loaded', data.rechargeRequests?.length || 0, 'recharge requests');
       } else {
         if (response.status === 401) {
+          console.log('Authentication failed, redirecting to login');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminInfo');
           navigate('/admin/login');
           return;
         }
+        console.error('API error:', data.error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -100,10 +113,11 @@ const AdminRechargeRequests = () => {
         });
       }
     } catch (error) {
+      console.error('Network error:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to fetch recharge requests',
+        title: 'Network Error',
+        description: 'Failed to connect to server. Please check your connection.',
       });
     } finally {
       setLoading(false);
@@ -286,17 +300,17 @@ const AdminRechargeRequests = () => {
               
               <div>
                 <Label htmlFor="status">Status Filter</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="status"
+                  className="block w-full mt-1 border rounded px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                >
+                  <option value="">All statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
               </div>
 
               <div className="flex items-end">
@@ -609,15 +623,23 @@ const AdminRechargeRequests = () => {
                   <>
                     <div>
                       <Label htmlFor="status">Decision</Label>
-                      <Select value={reviewData.status} onValueChange={(value) => setReviewData({...reviewData, status: value, approvedAmount: value === 'approved' ? selectedRequest.amount.toString() : ''})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select decision" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="approved">Approve</SelectItem>
-                          <SelectItem value="rejected">Reject</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <select
+                        id="status"
+                        className="block w-full mt-1 border rounded px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={reviewData.status}
+                        onChange={e => {
+                          const value = e.target.value;
+                          setReviewData({
+                            ...reviewData,
+                            status: value,
+                            approvedAmount: value === 'approved' ? selectedRequest.amount.toString() : ''
+                          });
+                        }}
+                      >
+                        <option value="">Select decision</option>
+                        <option value="approved">Approve</option>
+                        <option value="rejected">Reject</option>
+                      </select>
                     </div>
 
                     {reviewData.status === 'approved' && (

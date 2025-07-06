@@ -244,12 +244,15 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
 
       // Create transaction record
       const Transaction = require('../models/Transaction').default;
+      // Generate a unique transactionId (e.g., using timestamp and random string)
+      const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const transaction = new Transaction({
         phone: rechargeRequest.phone,
-        type: 'DEPOSIT',
+        type: 'deposit', // lowercase to match enum
         amount: amountToAdd,
         description: `Recharge approved by ${admin.email}`,
-        status: 'COMPLETED',
+        status: 'completed', // lowercase to match enum
+        transactionId, // required unique field
         reference: rechargeRequest._id
       });
       await transaction.save();
