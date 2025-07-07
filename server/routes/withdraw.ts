@@ -12,6 +12,8 @@ const router = Router();
 function isWithdrawalTimeValid(): boolean {
   const now = new Date();
   const hour = now.getHours();
+  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+  if (day === 0 || day === 6) return false; // Closed on Saturday and Sunday
   return hour >= 0 && hour < 17; // 00:30 - 17:00
 }
 
@@ -59,7 +61,7 @@ router.get("/:phone/limits", async (req, res) => {
       dailyLimit,
       dailyWithdrawn,
       remainingLimit,
-      minimumAmount: 1000, // Minimum withdrawal amount
+      minimumAmount: 500, // Minimum withdrawal amount set to 500
       maximumAmount: dailyLimit,
       taxRate: 0.15, // 15% tax
       isTimeValid: isWithdrawalTimeValid(),
@@ -77,7 +79,7 @@ router.get("/:phone/limits", async (req, res) => {
 router.post("/request", async (req, res) => {
   await connectDb();
   try {
-    const { phone, amount, password } = req.body;
+    const { phone, amount, password, upiId } = req.body;
 
     // Validate time
     if (!isWithdrawalTimeValid()) {
@@ -96,15 +98,17 @@ router.post("/request", async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    
     // Verify password (async bcrypt)
     const isValid = await bcrypt.compare(password, user.withdrawalPassword);
     if (!user.withdrawalPassword || !isValid) {
       return res.status(401).json({ error: "Invalid withdrawal password" });
     }
 
+    // Validate UPI ID
+    if (!upiId || typeof upiId !== 'string' || upiId.length < 5) {
+      return res.status(400).json({ error: 'Valid UPI ID is required' });
+    }
 
-    
     // Check wallet balance
     const wallet = await Transaction.aggregate([
       { $match: { phone } },
@@ -144,7 +148,8 @@ router.post("/request", async (req, res) => {
       tax,
       netAmount,
       transactionId: transaction._id,
-      status: TransactionStatus.PENDING
+      status: TransactionStatus.PENDING,
+      upiId
     });
     await withdrawal.save();
 

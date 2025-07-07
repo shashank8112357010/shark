@@ -6,8 +6,6 @@ import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-// Matches backend TransactionType and TransactionStatus (assuming they are strings)
-// From server/models/Transaction.ts
 enum BackendTransactionType {
   PURCHASE = 'purchase',
   REFERRAL = 'referral',

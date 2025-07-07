@@ -32,6 +32,7 @@ interface WithdrawalHistory {
   date: string;
   status: 'success' | 'pending' | 'failed';
   tax: number;
+  paymentUtr?: string;
 }
 
 const Withdraw = () => {
@@ -46,6 +47,7 @@ const Withdraw = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [limits, setLimits] = useState<WithdrawalLimits | null>(null);
   const [history, setHistory] = useState<WithdrawalHistory[]>([]);
+  const [upiId, setUpiId] = useState("");
 
   // Using useCallback for fetchWithdrawalData in case it's needed by other parts, though primarily for useEffect here.
   const fetchWithdrawalDataCallback = useCallback(async () => {
@@ -143,6 +145,10 @@ const Withdraw = () => {
         throw new Error("Please enter a valid positive amount");
       }
 
+      if (!upiId || upiId.length < 5) {
+        throw new Error("Please enter a valid UPI ID");
+      }
+
       if (!password) {
         throw new Error("Please enter your password");
       }
@@ -169,7 +175,8 @@ const Withdraw = () => {
         body: JSON.stringify({
           phone: userData.phone,
           amount: amountNum,
-          password
+          password,
+          upiId
         })
       });
 
@@ -184,6 +191,7 @@ const Withdraw = () => {
       });
       setAmount("");
       setPassword("");
+      setUpiId("");
       await fetchWithdrawalDataCallback();
     } catch (err: any) {
       toast({
@@ -220,8 +228,14 @@ const Withdraw = () => {
     <Layout>
       <div className="px-6 py-6">
         <Header title="Withdraw" />
+        {/* Disclaimer for withdrawal window */}
+        {!limits?.isTimeValid && (
+          <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
+            Withdrawals are currently closed. You can withdraw from <b>8:00 AM</b> to <b>10:00 PM</b> on working days.
+          </div>
+        )}
         <div className="mt-6">
-          <div className="bg-white rounded-lg p-6 card-shadow">
+          <div className=" rounded-lg p-6 card-shadow">
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Withdrawal Details</h3>
@@ -229,28 +243,12 @@ const Withdraw = () => {
                   {limits && (
                     <>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Available Balance</span>
-                        <span className="font-semibold">₹{userData.balance}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Daily Limit</span>
-                        <span className="font-semibold">₹{limits.dailyLimit}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Withdrawn Today</span>
-                        <span className="font-semibold">₹{limits.dailyWithdrawn}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Remaining Limit</span>
-                        <span className="font-semibold">₹{limits.remainingLimit}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
                         <span className="text-gray-600">Minimum Amount</span>
                         <span className="font-semibold">₹{limits.minimumAmount}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Tax Rate</span>
-                        <span className="font-semibold">{limits.taxRate}%</span>
+                        <span className="font-semibold">15%</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Withdrawal Window</span>
@@ -284,6 +282,16 @@ const Withdraw = () => {
                       />
                       <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">UPI ID</label>
+                    <Input
+                      type="text"
+                      value={upiId}
+                      onChange={e => setUpiId(e.target.value)}
+                      placeholder="Enter your UPI ID"
+                      disabled={submitLoading}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Password</label>
@@ -352,6 +360,12 @@ const Withdraw = () => {
                               {item.status}
                             </span>
                           </div>
+                          {item.paymentUtr && (
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-sm text-gray-600">UTR Number</span>
+                              <span className="text-sm font-mono">{item.paymentUtr}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

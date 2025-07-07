@@ -43,6 +43,10 @@ const withdrawalSchema = new mongoose.Schema({
     ref: "Transaction",
     required: true,
   },
+  upiId: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
