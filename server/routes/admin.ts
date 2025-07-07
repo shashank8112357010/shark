@@ -3,6 +3,7 @@ import Admin from '../models/Admin';
 import User from '../models/User';
 import RechargeRequest from '../models/RechargeRequest';
 import Withdrawal from '../models/Withdrawal';
+import Transaction, { TransactionType } from '../models/Transaction';
 import { connectDb } from '../utils/db';
 import jwt from 'jsonwebtoken';
 const router = express.Router();
@@ -94,40 +95,43 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
     const completedWithdrawals = await Withdrawal.countDocuments({ status: 'COMPLETED' });
 
     // Calculate total wallet balances using Transaction aggregation
-    const Transaction = require('../models/Transaction').default;
-    const { TransactionType } = require('../models/Transaction');
-    
-    const walletStats = await Transaction.aggregate([
-      { $match: { status: { $ne: 'failed' } } },
-      {
-        $group: {
-          _id: "$phone",
-          balance: { 
-            $sum: { 
-              $switch: {
-                branches: [
-                  { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                  { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                  { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                  { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-                ],
-                default: 0
+    let walletStats;
+    try {
+      walletStats = await Transaction.aggregate([
+        { $match: { status: { $ne: 'failed' } } },
+        {
+          $group: {
+            _id: "$phone",
+            balance: { 
+              $sum: { 
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                    { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                    { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                    { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+                  ],
+                  default: 0
+                }
               }
             }
           }
+        },
+        {
+          $group: {
+            _id: null,
+            totalBalance: { $sum: '$balance' },
+            avgBalance: { $avg: '$balance' },
+            minBalance: { $min: '$balance' },
+            maxBalance: { $max: '$balance' },
+            totalWallets: { $sum: 1 }
+          }
         }
-      },
-      {
-        $group: {
-          _id: null,
-          totalBalance: { $sum: '$balance' },
-          avgBalance: { $avg: '$balance' },
-          minBalance: { $min: '$balance' },
-          maxBalance: { $max: '$balance' },
-          totalWallets: { $sum: 1 }
-        }
-      }
-    ]);
+      ]);
+    } catch (transactionError) {
+      console.warn('Transaction aggregation failed:', transactionError);
+      walletStats = [];
+    }
 
     // Get recent activity
     const recentRecharges = await RechargeRequest.find()
@@ -255,7 +259,7 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
       const amountToAdd = approvedAmount || rechargeRequest.amount;
       
       // Create transaction record
-      const Transaction = require('../models/Transaction').default;
+
       // Generate a unique transactionId (e.g., using timestamp and random string)
       const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const transaction = new Transaction({
