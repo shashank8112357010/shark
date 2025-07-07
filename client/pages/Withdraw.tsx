@@ -105,6 +105,11 @@ const Withdraw = () => {
         closeTime: limitsData.timeWindow?.end,
       });
       setHistory(historyData.history || []);
+      
+      // Auto-fill UPI ID if saved
+      if (limitsData.savedUpiId && !upiId) {
+        setUpiId(limitsData.savedUpiId);
+      }
 
     } catch (error: any) {
       toast({
@@ -121,17 +126,20 @@ const Withdraw = () => {
 
 
   useEffect(() => {
-    if (userData?.phone) { // Only fetch if user phone is available
+    if (userLoading) {
+      // Still loading user context, keep page loading
+      setPageLoading(true);
+      return;
+    }
+    
+    if (userData?.phone) {
+      // User is logged in, fetch withdrawal data
       fetchWithdrawalDataCallback();
     } else {
-      // If no user phone, and context is not loading, means user is not logged in.
-      // The main component return handles showing "Not Logged In" UI.
-      // We just need to make sure loading is false.
-       if (!userData && !userLoading) { // Check if context itself is done loading
-         setPageLoading(false);
-       }
+      // User context loaded but no user data, stop loading
+      setPageLoading(false);
     }
-  }, [userData, fetchWithdrawalDataCallback, userLoading]); // Add userLoading to wait for context
+  }, [userData, fetchWithdrawalDataCallback, userLoading]);
 
   const handleWithdraw = async () => {
     setSubmitLoading(true);
@@ -191,7 +199,7 @@ const Withdraw = () => {
       });
       setAmount("");
       setPassword("");
-      setUpiId("");
+      // Don't clear UPI ID as it should be saved for next time
       await fetchWithdrawalDataCallback();
     } catch (err: any) {
       toast({
@@ -204,7 +212,7 @@ const Withdraw = () => {
     }
   };
 
-  if (pageLoading) {
+  if (pageLoading || userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner size={32} />
@@ -231,7 +239,7 @@ const Withdraw = () => {
         {/* Disclaimer for withdrawal window */}
         {!limits?.isTimeValid && (
           <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
-            Withdrawals are currently closed. You can withdraw from <b>8:00 AM</b> to <b>10:00 PM</b> on working days.
+            Withdrawals are currently closed. You can withdraw from <b>8:00 AM</b> to <b>10:00 PM IST</b> (Monday to Friday only).
           </div>
         )}
         <div className="mt-6">
@@ -292,6 +300,7 @@ const Withdraw = () => {
                       placeholder="Enter your UPI ID"
                       disabled={submitLoading}
                     />
+                    <p className="text-xs text-gray-500 mt-1">Your UPI ID will be saved for future withdrawals</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Password</label>

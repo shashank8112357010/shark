@@ -12,7 +12,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,7 +25,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user.phone) return;
+      if (!user.phone) {
+        setLoading(false);
+        return;
+      }
 
       // Fetch all data in parallel
       const [balanceRes, referralRes, userRes] = await Promise.all([

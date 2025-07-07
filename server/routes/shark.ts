@@ -17,31 +17,67 @@ function generateTransactionId() {
 
 // Buy shark investment
 router.post("/buy", async (req, res) => {
-  await connectDb();
-  const { phone, shark, price } = req.body;
-
-  if (!phone || !shark || !price) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  const transactionId = generateTransactionId();
-  const transaction = new Transaction({
-    phone,
-    type: TransactionType.PURCHASE,
-    amount: Number(price),
-    transactionId,
-    description: `Shark purchase - ${shark}`,
-    metadata: { shark, price: Number(price) }
-  });
-
   try {
+    await connectDb();
+    const { phone, shark, price, level } = req.body;
+
+    if (!phone || !shark || !price || !level) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    // Check if user has already purchased a shark at this level
+    const existingPurchase = await SharkInvestment.findOne({ 
+      phone, 
+      level: Number(level)
+    });
+    
+    if (existingPurchase) {
+      return res.status(400).json({ 
+        error: `You have already purchased a shark at Level ${level}. Each level can only be purchased once.` 
+      });
+    }
+
+    let transactionId: string;
+    
+    transactionId = generateTransactionId();
+    
+    const transaction = new Transaction({
+      phone,
+      type: TransactionType.PURCHASE,
+      amount: Number(price),
+      transactionId,
+      description: `Shark purchase - ${shark}`,
+      metadata: { shark, price: Number(price) }
+    });
+    
     const qrData = `shark:${transactionId}:${phone}`;
     const qrCode = await QRCode.toDataURL(qrData);
     transaction.qrCode = qrCode;
     await transaction.save();
 
-    const wallet = await Wallet.findOne({ phone });
-    if (!wallet || wallet.balance < price) {
+    // Check balance using Transaction aggregation (similar to withdrawal logic)
+    const balanceResult = await Transaction.aggregate([
+      { $match: { phone, status: { $ne: TransactionStatus.FAILED } } },
+      { $group: {
+        _id: null,
+        balance: { 
+          $sum: { 
+            $switch: {
+              branches: [
+                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+              ],
+              default: 0
+            }
+          }
+        }
+      }}
+    ]);
+    const currentBalance = balanceResult[0]?.balance || 0;
+    
+    if (currentBalance < price) {
       await Transaction.findOneAndUpdate(
         { transactionId },
         {
@@ -52,18 +88,7 @@ router.post("/buy", async (req, res) => {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    wallet.balance -= Number(price);
-    await wallet.save();
-
-    const investment = new SharkInvestment({
-      phone,
-      shark,
-      price: Number(price),
-      date: new Date(),
-      transactionId
-    });
-    await investment.save();
-
+    // Mark transaction as completed (this will deduct balance in aggregation)
     await Transaction.findOneAndUpdate(
       { transactionId },
       {
@@ -71,6 +96,16 @@ router.post("/buy", async (req, res) => {
         description: `Shark purchase completed - ${shark}`
       }
     );
+
+    const investment = new SharkInvestment({
+      phone,
+      shark,
+      price: Number(price),
+      date: new Date(),
+      transactionId,
+      level: Number(level)
+    });
+    await investment.save();
 
     const user = await User.findOne({ phone });
     if (user?.referrer) {
@@ -114,18 +149,38 @@ router.post("/buy", async (req, res) => {
       success: true,
       transactionId,
       qrCode: transaction.qrCode,
-      investment
-    });
-  } catch (error: any) {
-    console.error("Purchase error:", error);
-    await Transaction.findOneAndUpdate(
-      { transactionId },
-      {
-        status: TransactionStatus.FAILED,
-        description: error.message
+      investment: {
+        id: investment._id,
+        phone: investment.phone,
+        shark: investment.shark,
+        level: investment.level,
+        price: investment.price
       }
-    );
-    res.status(500).json({ error: "Transaction failed" });
+    });
+    
+  } catch (error: any) {
+    console.error("=== PURCHASE ERROR ===", error);
+    
+    // Try to mark transaction as failed if it exists
+    try {
+      if (typeof transactionId !== 'undefined') {
+        await Transaction.findOneAndUpdate(
+          { transactionId },
+          {
+            status: TransactionStatus.FAILED,
+            description: error.message
+          }
+        );
+      }
+    } catch (updateError) {
+      console.error('Error updating transaction status:', updateError);
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Transaction failed",
+      details: error.stack
+    });
   }
 });
 
@@ -165,6 +220,57 @@ router.get("/user/:phone", async (req, res) => {
       "status transactionId createdAt"
     );
   res.json({ investments });
+});
+
+// Get user's purchased sharks with full details
+router.get("/purchased/:phone", async (req, res) => {
+  try {
+    await connectDb();
+    const phone = req.params.phone;
+    
+    // Get all successful purchases for this user (only records with level and transactionId)
+    const purchases = await SharkInvestment.find({ 
+      phone,
+      level: { $exists: true, $ne: null },
+      transactionId: { $exists: true, $ne: null }
+    }).sort({ date: -1 }); // Most recent first
+    
+    // Get the associated transaction details
+    const purchaseDetails = await Promise.all(
+      purchases.map(async (purchase) => {
+        const transaction = await Transaction.findOne({ 
+          transactionId: purchase.transactionId,
+          status: TransactionStatus.COMPLETED
+        });
+        
+        return {
+          id: purchase._id,
+          shark: purchase.shark,
+          level: purchase.level,
+          price: purchase.price,
+          date: purchase.date,
+          transactionId: purchase.transactionId,
+          status: transaction ? transaction.status : 'unknown'
+        };
+      })
+    );
+    
+    // Filter only completed purchases
+    const completedPurchases = purchaseDetails.filter(p => p.status === TransactionStatus.COMPLETED);
+    
+    res.json({ 
+      success: true,
+      purchases: completedPurchases,
+      totalPurchases: completedPurchases.length
+    });
+  } catch (error: any) {
+    console.error('Error fetching purchased sharks:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch purchased sharks',
+      details: error.message 
+    });
+  }
 });
 
 // Get user's transaction history
@@ -232,6 +338,62 @@ router.get("/levels", async (req, res) => {
     }
 
     res.status(500).json({ error: errorMessage, details: error.message });
+  }
+});
+
+// Get all investment levels and sharks with user's purchase status
+router.get("/levels/:phone", async (req, res) => {
+  try {
+    await connectDb();
+    const userPhone = req.params.phone;
+    
+    // Get user's purchased levels (filter out records without level field)
+    const userPurchases = await SharkInvestment.find({ 
+      phone: userPhone, 
+      level: { $exists: true, $ne: null } 
+    }).select('level');
+    const purchasedLevels = new Set(userPurchases.map(p => p.level).filter(level => level !== undefined && level !== null));
+    
+    const allSharksFromDB = await SharkModel.find().sort({ levelNumber: 1, price: 1 }).lean();
+
+    if (!allSharksFromDB || allSharksFromDB.length === 0) {
+      return res.json({ levels: [] });
+    }
+
+    // Group sharks by levelNumber and mark if purchased
+    const levelsMap = new Map<number, any[]>();
+    allSharksFromDB.forEach(shark => {
+      const level = shark.levelNumber;
+      if (!levelsMap.has(level)) {
+        levelsMap.set(level, []);
+      }
+      
+      levelsMap.get(level)?.push({
+        id: shark._id.toString(),
+        title: shark.title,
+        image: shark.image,
+        price: shark.price,
+        total: shark.totalReturn,
+        daily: shark.dailyIncome,
+        endDay: shark.durationDays,
+        isPurchased: purchasedLevels.has(level) // Mark if this level is purchased
+      });
+    });
+
+    const structuredLevels = Array.from(levelsMap.entries()).map(([levelNumber, sharks]) => ({
+      level: levelNumber,
+      sharks: sharks,
+      isPurchased: purchasedLevels.has(levelNumber)
+    })).sort((a, b) => a.level - b.level);
+
+    res.json({ levels: structuredLevels });
+
+  } catch (error: any) {
+    console.error("Error fetching levels with purchase status:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch investment levels with purchase status", 
+      details: error.message 
+    });
   }
 });
 

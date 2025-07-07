@@ -49,7 +49,7 @@ const Layout = ({
             {/* User Info */}
             <div className="absolute top-6 right-6 z-20">
               {userData && <UserInfo
-                phone={userData.phone.replace(/^[\d]{2}(\d{6})\d{2}$/, '$1****$3')}
+                phone={userData.phone}
                 balance={balance}
                 referrals={currentReferrals}
                 loading={loading}

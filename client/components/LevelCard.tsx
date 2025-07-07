@@ -13,6 +13,7 @@ interface LevelCardProps {
   isLocked: boolean;
   onBuy: () => void;
   buyLoading?: boolean;
+  isPurchased?: boolean;
 }
 
 const LevelCard = ({
@@ -26,6 +27,7 @@ const LevelCard = ({
   endDay,
   onBuy,
   buyLoading = false,
+  isPurchased = false,
 }: LevelCardProps) => {
   console.log("hey 1 " +  price);
   
@@ -66,7 +68,14 @@ const LevelCard = ({
           </div>
         </div>
 
-        {isLocked ? (
+        {isPurchased ? (
+          <Button
+            disabled
+            className="w-full h-10 bg-green-500 text-white font-medium rounded-md text-sm flex items-center justify-center opacity-90 cursor-not-allowed"
+          >
+            ✓ Purchased
+          </Button>
+        ) : isLocked ? (
           <Button
             disabled
             className="w-full h-10 bg-gray-400 text-white font-medium rounded-md text-sm flex items-center justify-center opacity-70 cursor-not-allowed"

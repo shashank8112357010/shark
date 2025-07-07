@@ -8,13 +8,21 @@ import bcrypt from "bcryptjs";
 
 const router = Router();
 
-// Helper function to check if withdrawal time is valid
+// Helper function to check if withdrawal time is valid (8 AM - 10 PM IST, Monday-Friday)
 function isWithdrawalTimeValid(): boolean {
   const now = new Date();
-  const hour = now.getHours();
-  const day = now.getDay(); // 0 = Sunday, 6 = Saturday
-  if (day === 0 || day === 6) return false; // Closed on Saturday and Sunday
-  return hour >= 0 && hour < 17; // 00:30 - 17:00
+  // Convert to IST (UTC + 5:30)
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  const istTime = new Date(now.getTime() + istOffset);
+  
+  const hour = istTime.getHours();
+  const day = istTime.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // Closed on Saturday and Sunday
+  if (day === 0 || day === 6) return false;
+  
+  // Open from 8 AM to 10 PM (22:00) IST
+  return hour >= 8 && hour < 22;
 }
 
 // Get withdrawal history
@@ -53,7 +61,7 @@ router.get("/:phone/limits", async (req, res) => {
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
-    const dailyLimit = 50000; // 50,000 daily limit
+    const dailyLimit = 5000; // 5,000 daily limit
     const dailyWithdrawn = todayWithdrawals.reduce((sum, w) => sum + w.amount, 0);
     const remainingLimit = dailyLimit - dailyWithdrawn;
 
@@ -61,14 +69,15 @@ router.get("/:phone/limits", async (req, res) => {
       dailyLimit,
       dailyWithdrawn,
       remainingLimit,
-      minimumAmount: 500, // Minimum withdrawal amount set to 500
+      minimumAmount: 100, // Minimum withdrawal amount set to 100
       maximumAmount: dailyLimit,
       taxRate: 0.15, // 15% tax
       isTimeValid: isWithdrawalTimeValid(),
       timeWindow: {
-        start: "00:30",
-        end: "17:00"
-      }
+        start: "8:00 AM",
+        end: "10:00 PM"
+      },
+      savedUpiId: user.upiId || null // Include saved UPI ID
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch withdrawal limits" });
@@ -84,10 +93,10 @@ router.post("/request", async (req, res) => {
     // Validate time
     if (!isWithdrawalTimeValid()) {
       return res.status(400).json({
-        error: "Withdrawal time window is 00:30 - 17:00",
+        error: "Withdrawals are only allowed Monday to Friday from 8:00 AM to 10:00 PM IST",
         timeWindow: {
-          start: "00:30",
-          end: "17:00"
+          start: "8:00 AM",
+          end: "10:00 PM"
         }
       });
     }
@@ -109,18 +118,30 @@ router.post("/request", async (req, res) => {
       return res.status(400).json({ error: 'Valid UPI ID is required' });
     }
 
-    // Check wallet balance
-    const wallet = await Transaction.aggregate([
-      { $match: { phone } },
+    // Check wallet balance using Transaction aggregation
+    const balanceResult = await Transaction.aggregate([
+      { $match: { phone, status: { $ne: TransactionStatus.FAILED } } },
       { $group: {
         _id: null,
-        balance: { $sum: { $cond: [{ $eq: ["$type", TransactionType.DEPOSIT] }, "$amount", { $multiply: ["$amount", -1] }] } }
+        balance: { 
+          $sum: { 
+            $switch: {
+              branches: [
+                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+              ],
+              default: 0
+            }
+          }
+        }
       }}
     ]);
-    const balance = wallet[0]?.balance || 0;
-    console.log('wallet aggregation result:', wallet);
-    console.log('calculated balance:', balance);
-    console.log('amount requested:', amount);
+    const balance = balanceResult[0]?.balance || 0;
+    console.log('Balance calculation result:', balanceResult);
+    console.log('Current balance:', balance);
+    console.log('Withdrawal amount requested:', amount);
 
     // Calculate tax and net amount
     const tax = amount * 0.15;
@@ -130,16 +151,23 @@ router.post("/request", async (req, res) => {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
-    // Create withdrawal transaction
+    // Create withdrawal transaction with unique transactionId
+    const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const transaction = new Transaction({
       phone,
       type: TransactionType.WITHDRAWAL,
       amount,
-      tax,
-      netAmount,
-      status: TransactionStatus.PENDING
+      status: TransactionStatus.PENDING,
+      transactionId,
+      description: `Withdrawal request to UPI: ${upiId}`
     });
     await transaction.save();
+
+    // Save UPI ID to user profile for future use
+    if (upiId && upiId !== user.upiId) {
+      user.upiId = upiId;
+      await user.save();
+    }
 
     // Create withdrawal record
     const withdrawal = new Withdrawal({

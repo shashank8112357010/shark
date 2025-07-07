@@ -334,6 +334,15 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
     withdrawal.reviewedAt = new Date();
 
     await withdrawal.save();
+    
+    // Update the associated transaction status to completed
+    const Transaction = require('../models/Transaction').default;
+    const { TransactionStatus } = require('../models/Transaction');
+    const originalTransaction = await Transaction.findById(withdrawal.transactionId);
+    if (originalTransaction) {
+      originalTransaction.status = TransactionStatus.COMPLETED;
+      await originalTransaction.save();
+    }
 
     res.json({
       success: true,
@@ -370,11 +379,27 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
 
     await withdrawal.save();
 
-    // Refund the amount back to user's wallet
-    const wallet = await Wallet.findOne({ phone: withdrawal.phone });
-    if (wallet) {
-      wallet.balance += withdrawal.amount;
-      await wallet.save();
+    // Refund the amount back to user's balance using Transaction model
+    const Transaction = require('../models/Transaction').default;
+    const { TransactionType, TransactionStatus } = require('../models/Transaction');
+    
+    // Create refund transaction
+    const refundTransactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const refundTransaction = new Transaction({
+      phone: withdrawal.phone,
+      type: TransactionType.DEPOSIT,
+      amount: withdrawal.amount,
+      status: TransactionStatus.COMPLETED,
+      transactionId: refundTransactionId,
+      description: `Withdrawal refund for rejected request by ${admin.email}`
+    });
+    await refundTransaction.save();
+    
+    // Also update the original withdrawal transaction status
+    const originalTransaction = await Transaction.findById(withdrawal.transactionId);
+    if (originalTransaction) {
+      originalTransaction.status = TransactionStatus.FAILED;
+      await originalTransaction.save();
     }
 
     res.json({

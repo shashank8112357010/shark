@@ -95,6 +95,12 @@ const Profile = () => {
       isActive: location.pathname === "/account-records",
     },
     {
+      icon: CreditCard,
+      label: "Shark History",
+      path: "/shark-history",
+      isActive: location.pathname === "/shark-history",
+    },
+    {
       icon: FileText,
       label: "Invite Code",
       path: "/invite",

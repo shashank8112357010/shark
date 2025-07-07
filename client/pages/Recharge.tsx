@@ -144,26 +144,7 @@ const Recharge = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Amount Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Select</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {rechargeMethods.map((method) => (
-                <Button
-                  key={method.id}
-                  variant={amount === method.amount.toString() ? "default" : "outline"}
-                  onClick={() => setAmount(method.amount.toString())}
-                  className="h-12 text-lg"
-                >
-                  {method.name}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+     
 
         {/* Proceed to Payment Button */}
         <Button

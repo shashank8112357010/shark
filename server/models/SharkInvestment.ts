@@ -5,6 +5,8 @@ export interface ISharkInvestment extends Document {
   shark: string;
   price: number;
   date: Date;
+  transactionId: string;
+  level: number;
 }
 
 const SharkInvestmentSchema = new Schema<ISharkInvestment>({
@@ -12,6 +14,8 @@ const SharkInvestmentSchema = new Schema<ISharkInvestment>({
   shark: { type: String, required: true },
   price: { type: Number, required: true },
   date: { type: Date, default: Date.now },
+  transactionId: { type: String, required: true },
+  level: { type: Number, required: true },
 });
 
 export default mongoose.models.SharkInvestment || mongoose.model<ISharkInvestment>('SharkInvestment', SharkInvestmentSchema);

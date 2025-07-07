@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useUser } from "@/contexts/UserContext";
 
 interface Shark {
   id: string;
@@ -24,7 +25,8 @@ interface Shark {
   total: number;
   daily: number;
   endDay: number;
-  isLocked : boolean
+  isLocked: boolean;
+  isPurchased?: boolean; // Add purchased status
 }
 
 interface LevelData {
@@ -35,6 +37,7 @@ interface LevelData {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshUserData } = useUser();
 
   // State for dynamic level data
   const [allLevelData, setAllLevelData] = useState<LevelData[]>([]);
@@ -223,16 +226,41 @@ const Dashboard = () => {
     },
   ];
 
-  // Always use mockLevelData for level data
+  // Fetch real level data with purchase status
   useEffect(() => {
-    setLevelsLoading(true);
-    setAllLevelData(mockLevelData);
-    setLevelsLoading(false);
-    if (mockLevelData.length > 0) {
-      setLevelsLoading(false);
-      setSelectedLevel(mockLevelData[0].level);
-    }
-  }, []);
+    const fetchLevelData = async () => {
+      if (!user?.phone) return;
+      
+      setLevelsLoading(true);
+      try {
+        // Try to fetch real data first
+        const response = await fetch(`/api/shark/levels/${user.phone}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.levels && data.levels.length > 0) {
+            setAllLevelData(data.levels);
+            setSelectedLevel(data.levels[0].level);
+            setLevelsLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback to mock data if API fails or returns empty
+        console.log('Using mock data as fallback');
+        setAllLevelData(mockLevelData);
+        setSelectedLevel(mockLevelData[0].level);
+      } catch (error) {
+        console.error('Error fetching level data:', error);
+        // Use mock data as fallback
+        setAllLevelData(mockLevelData);
+        setSelectedLevel(mockLevelData[0].level);
+      } finally {
+        setLevelsLoading(false);
+      }
+    };
+    
+    fetchLevelData();
+  }, [user]);
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
@@ -262,6 +290,7 @@ const Dashboard = () => {
           phone: user.phone,
           shark: shark.title,
           price: shark.price,
+          level: selectedLevel,
         }),
       });
       const data = await res.json();
@@ -271,6 +300,23 @@ const Dashboard = () => {
         title: "Purchase Successful!",
         description: `You have successfully purchased ${shark.title}.`,
       });
+      
+      // Refresh user data and level data to show updated purchase status
+      try {
+        // Refresh user balance
+        refreshUserData();
+        
+        // Refresh level data
+        const response = await fetch(`/api/shark/levels/${user.phone}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.levels && data.levels.length > 0) {
+            setAllLevelData(data.levels);
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
     } catch (err: any) {
       toast({
         variant: "destructive",
@@ -341,7 +387,7 @@ const Dashboard = () => {
           )}
 
           {/* Current Referrals */}
-          <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
+          {/* <div className="mt-4 bg-white rounded-lg p-3 card-shadow">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600 text-readable">
                 Current Referrals:
@@ -350,7 +396,7 @@ const Dashboard = () => {
                 {currentReferrals}
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* Selected Level Sharks */}
           <div className="mt-6">
@@ -376,9 +422,10 @@ const Dashboard = () => {
                       total={shark.total}
                       daily={shark.daily}
                       endDay={shark.endDay}
-                      isLocked={shark.isLocked}
+                      isLocked={shark.isLocked || shark.isPurchased} // Lock if already purchased
                       onBuy={() => handleBuyLevel(shark)}
                       buyLoading={isCurrentSharkLoading}
+                      isPurchased={shark.isPurchased}
                     />
                   );
                 })}

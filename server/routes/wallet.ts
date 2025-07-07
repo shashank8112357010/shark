@@ -6,11 +6,39 @@ import { connectDb } from '../utils/db';
 
 const router = Router();
 
-// Get wallet balance
+// Get wallet balance using Transaction aggregation
 router.get("/balance/:phone", async (req, res) => {
-  await connectDb();
-  const wallet = await Wallet.findOne({ phone: req.params.phone });
-  res.json({ balance: wallet ? wallet.balance : 0 });
+  try {
+    await connectDb();
+    const phone = req.params.phone;
+    
+    // Calculate balance using Transaction aggregation
+    const balanceResult = await Transaction.aggregate([
+      { $match: { phone, status: { $ne: 'failed' } } },
+      { $group: {
+        _id: null,
+        balance: { 
+          $sum: { 
+            $switch: {
+              branches: [
+                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+              ],
+              default: 0
+            }
+          }
+        }
+      }}
+    ]);
+    
+    const balance = balanceResult[0]?.balance || 0;
+    res.json({ balance });
+  } catch (error: any) {
+    console.error('Error calculating balance:', error);
+    res.status(500).json({ error: 'Failed to calculate balance', details: error.message });
+  }
 });
 
 // Submit recharge request

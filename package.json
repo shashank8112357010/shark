@@ -19,6 +19,9 @@
     "test": "vitest --run",
     "create-admin": "tsx server/scripts/createAdmin.ts",
     "add-test-data": "tsx server/scripts/addTestData.ts",
+    "clean-db": "tsx scripts/cleanDatabase.js",
+    "add-sharks": "tsx scripts/addSharkData.js",
+    "update-admin": "tsx scripts/updateAdminPassword.js",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },

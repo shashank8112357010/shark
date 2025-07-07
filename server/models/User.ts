@@ -6,6 +6,7 @@ export interface IUser extends Document {
   withdrawalPassword: string;
   inviteCode: string;
   referrer?: string;
+  upiId?: string;
   created: Date;
   verifyPassword(password: string): boolean;
 }
@@ -16,6 +17,7 @@ const UserSchema = new Schema<IUser>({
   withdrawalPassword: { type: String, required: true },
   inviteCode: { type: String, required: true, unique: true },
   referrer: { type: String },
+  upiId: { type: String },
   created: { type: Date, default: Date.now },
 });
 

@@ -16,7 +16,7 @@ async function createDefaultAdmin() {
     // Create default admin
     const admin = new Admin({
       email: 'admin@gmail.com',
-      password: 'admin@321',
+      password: 'admin@123',
       name: 'Admin',
       role: 'admin',
       isActive: true
@@ -25,7 +25,7 @@ async function createDefaultAdmin() {
     await admin.save();
     console.log('Default admin user created successfully');
     console.log('Email: admin@gmail.com');
-    console.log('Password: admin@321');
+    console.log('Password: admin@123');
     
   } catch (error) {
     console.error('Error creating admin user:', error);
