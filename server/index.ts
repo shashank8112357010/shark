@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cron from "node-cron";
 import { handleDemo } from "./routes/demo";
 import authRouter from "./routes/auth";
 import walletRouter from "./routes/wallet";
@@ -7,6 +8,8 @@ import sharkRouter from "./routes/shark";
 import referralRouter from "./routes/referral";
 import withdrawRouter from "./routes/withdraw";
 import adminRouter from "./routes/admin";
+import incomeRouter from "./routes/income";
+import { startIncomeScheduler } from "./utils/incomeScheduler";
 
 export function createServer() {
   const app = express();
@@ -36,8 +39,15 @@ export function createServer() {
   app.use("/api/referral", referralRouter);
   app.use("/api/withdraw", withdrawRouter);
   
+  // Add income routes
+  app.use("/api/income", incomeRouter);
+  
   // Add admin routes
   app.use("/api/admin", adminRouter);
+
+  // Start the income scheduler (runs at 4 AM IST daily)
+  startIncomeScheduler();
+  console.log('🕐 Income scheduler started - will run daily at 4 AM IST');
 
   return app;
 }

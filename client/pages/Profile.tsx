@@ -38,7 +38,7 @@ const Profile = () => {
   const { handleStateChange } = useStateChange();
 
   const [totalRecharge, setTotalRecharge] = useState(0);
-  const [totalIncome, setTotalIncome] = useState(0); // Primarily referral income
+  const [totalIncome, setTotalIncome] = useState(0); // Total shark income from daily earnings
   const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
@@ -52,24 +52,32 @@ const Profile = () => {
 
       setLoadingStats(true);
       try {
-        // Fetch all stats from the new endpoint
+        // Fetch wallet stats for recharge data
         const statsResponse = await fetch(`/api/wallet/stats/${userData.phone}`);
         if (!statsResponse.ok) {
           const errorData = await statsResponse.json().catch(() => ({}));
           throw new Error(errorData.error || "Failed to fetch profile statistics");
         }
         const statsData = await statsResponse.json();
-
         setTotalRecharge(statsData.totalRecharge || 0);
-        // Assuming "Income" on the profile page primarily refers to referral earnings
-        setTotalIncome(statsData.totalReferralEarnings || 0);
 
-        // If other types of income need to be summed, adjust here or in backend
-        // For example, if there were 'EARNINGS' from plans as a separate transaction type:
-        // const otherEarnings = backendTransactions
-        //   .filter(tx => tx.type === BackendTransactionType.EARNING) // Assuming an EARNING type
-        //   .reduce((sum, tx) => sum + tx.amount, 0);
-        // setTotalIncome((statsData.totalReferralEarnings || 0) + otherEarnings);
+        // Fetch total income from shark investments (separate from balance)
+        const incomeResponse = await fetch(`/api/income/total/${userData.phone}`);
+        if (incomeResponse.ok) {
+          const incomeData = await incomeResponse.json();
+          if (incomeData.success) {
+            // Set total shark income (exclusive of balance)
+            setTotalIncome(incomeData.totalIncome || 0);
+            console.log(`📊 Total shark income loaded: ₹${incomeData.totalIncome} from ${incomeData.totalRecords} records`);
+          } else {
+            console.warn('Income API returned success=false:', incomeData);
+            setTotalIncome(0);
+          }
+        } else {
+          // Fallback to referral earnings if income API is not available
+          console.warn('Income API not available, using referral earnings as fallback');
+          setTotalIncome(statsData.totalReferralEarnings || 0);
+        }
 
       } catch (error: any) {
         toast({

@@ -22,6 +22,7 @@
     "clean-db": "tsx scripts/cleanDatabase.js",
     "add-sharks": "tsx scripts/addSharkData.js",
     "update-admin": "tsx scripts/updateAdminPassword.js",
+    "calculate-income": "tsx server/scripts/calculateDailyIncome.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },
@@ -33,12 +34,14 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.1",
+    "node-cron": "^3.0.3",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@types/node-cron": "^3.0.11",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
