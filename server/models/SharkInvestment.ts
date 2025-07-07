@@ -18,4 +18,7 @@ const SharkInvestmentSchema = new Schema<ISharkInvestment>({
   level: { type: Number, required: true },
 });
 
+// Ensure each user can buy each shark only once, but all users can buy the same shark
+SharkInvestmentSchema.index({ phone: 1, shark: 1, level: 1 }, { unique: true });
+
 export default mongoose.models.SharkInvestment || mongoose.model<ISharkInvestment>('SharkInvestment', SharkInvestmentSchema);

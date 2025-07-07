@@ -2,6 +2,7 @@ import { Router } from "express";
 import Transaction, { TransactionType } from '../models/Transaction'; // Import Transaction model and type
 import RechargeRequest from '../models/RechargeRequest';
 import { connectDb } from '../utils/db';
+import { calculateUserBalance, checkSufficientBalance } from '../utils/balanceCalculator';
 
 const router = Router();
 
@@ -11,28 +12,8 @@ router.get("/balance/:phone", async (req, res) => {
     await connectDb();
     const phone = req.params.phone;
     
-    // Calculate balance using Transaction aggregation
-    const balanceResult = await Transaction.aggregate([
-      { $match: { phone, status: { $ne: 'failed' } } },
-      { $group: {
-        _id: null,
-        balance: { 
-          $sum: { 
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-              ],
-              default: 0
-            }
-          }
-        }
-      }}
-    ]);
-    
-    const balance = balanceResult[0]?.balance || 0;
+    // Calculate balance using consistent utility function
+    const balance = await calculateUserBalance(phone);
     res.json({ balance });
   } catch (error: any) {
     console.error('Error calculating balance:', error);
@@ -154,30 +135,14 @@ router.post("/withdraw", async (req, res) => {
     const { phone, amount } = req.body;
     if (!phone || !amount) return res.status(400).json({ error: "Missing fields" });
     
-    // Check current balance using transaction aggregation
-    const balanceResult = await Transaction.aggregate([
-      { $match: { phone, status: { $ne: 'failed' } } },
-      { $group: {
-        _id: null,
-        balance: { 
-          $sum: { 
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-              ],
-              default: 0
-            }
-          }
-        }
-      }}
-    ]);
-    
-    const currentBalance = balanceResult[0]?.balance || 0;
-    if (currentBalance < Number(amount)) {
-      return res.status(400).json({ error: "Insufficient balance" });
+    // Check current balance using consistent utility function
+    const balanceCheck = await checkSufficientBalance(phone, Number(amount));
+    if (!balanceCheck.hasBalance) {
+      return res.status(400).json({ 
+        error: "Insufficient balance",
+        currentBalance: balanceCheck.currentBalance,
+        requiredAmount: Number(amount)
+      });
     }
     
     // Create withdrawal transaction

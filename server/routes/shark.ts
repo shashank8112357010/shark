@@ -5,6 +5,7 @@ import Referral from "../models/Referral";
 import User from "../models/User";
 import SharkModel, { IShark } from "../models/Shark"; // Import the new Shark model
 import { connectDb } from "../utils/db";
+import { checkSufficientBalance } from "../utils/balanceCalculator";
 import QRCode from "qrcode";
 
 const router = Router();
@@ -18,6 +19,8 @@ function generateTransactionId() {
 router.post("/buy", async (req, res) => {
   try {
     await connectDb();
+    console.log(req.body, "req.body");
+    
     const { phone, shark, price, level, sharkId } = req.body;
 
     if (!phone || !shark || !price || !level) {
@@ -55,37 +58,23 @@ router.post("/buy", async (req, res) => {
     transaction.qrCode = qrCode;
     await transaction.save();
 
-    // Check balance using Transaction aggregation (similar to withdrawal logic)
-    const balanceResult = await Transaction.aggregate([
-      { $match: { phone, status: { $ne: TransactionStatus.FAILED } } },
-      { $group: {
-        _id: null,
-        balance: { 
-          $sum: { 
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-              ],
-              default: 0
-            }
-          }
-        }
-      }}
-    ]);
-    const currentBalance = balanceResult[0]?.balance || 0;
+    // Check balance using consistent utility function
+    const balanceCheck = await checkSufficientBalance(phone, Number(price));
+    console.log(`Balance check for ${phone}: Current balance ₹${balanceCheck.currentBalance}, Required: ₹${price}, Has sufficient: ${balanceCheck.hasBalance}`);
     
-    if (currentBalance < price) {
+    if (!balanceCheck.hasBalance) {
       await Transaction.findOneAndUpdate(
         { transactionId },
         {
           status: TransactionStatus.FAILED,
-          description: "Insufficient balance"
+          description: `Insufficient balance. Available: ₹${balanceCheck.currentBalance}, Required: ₹${price}`
         }
       );
-      return res.status(400).json({ error: "Insufficient balance" });
+      return res.status(400).json({ 
+        error: "Insufficient balance",
+        currentBalance: balanceCheck.currentBalance,
+        requiredAmount: Number(price)
+      });
     }
 
     // Mark transaction as completed (this will deduct balance in aggregation)

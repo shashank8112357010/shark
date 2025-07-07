@@ -3,12 +3,13 @@ import Admin from '../models/Admin';
 import User from '../models/User';
 import RechargeRequest from '../models/RechargeRequest';
 import Withdrawal from '../models/Withdrawal';
-import Transaction, { TransactionType } from '../models/Transaction';
+import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
 import { connectDb } from '../utils/db';
 import jwt from 'jsonwebtoken';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key';
 
+import SharkModel from '../models/Shark';
 // Admin authentication middleware
 const authenticateAdmin = async (req: any, res: any, next: any) => {
   try {
@@ -355,8 +356,6 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
     await withdrawal.save();
     
     // Update the associated transaction status to completed
-    const Transaction = require('../models/Transaction').default;
-    const { TransactionStatus } = require('../models/Transaction');
     const originalTransaction = await Transaction.findById(withdrawal.transactionId);
     if (originalTransaction) {
       originalTransaction.status = TransactionStatus.COMPLETED;
@@ -399,8 +398,6 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
     await withdrawal.save();
 
     // Refund the amount back to user's balance using Transaction model
-    const Transaction = require('../models/Transaction').default;
-    const { TransactionType, TransactionStatus } = require('../models/Transaction');
     
     // Create refund transaction
     const refundTransactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -448,8 +445,6 @@ router.get('/users', authenticateAdmin, async (req, res) => {
     const total = await User.countDocuments();
 
     // Get wallet balances for each user using transaction aggregation
-    const Transaction = require('../models/Transaction').default;
-    const { TransactionType } = require('../models/Transaction');
     
     const usersWithWallets = await Promise.all(
       users.map(async (user) => {
@@ -503,7 +498,7 @@ router.get('/sharks', authenticateAdmin, async (req, res) => {
   try {
     await connectDb();
     
-    const SharkModel = require('../models/Shark').default;
+    
     const sharks = await SharkModel.find().sort({ levelNumber: 1, price: 1 });
     
     // Group by levels
@@ -553,7 +548,7 @@ router.patch('/sharks/:id/lock-status', authenticateAdmin, async (req, res) => {
       return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
     }
     
-    const SharkModel = require('../models/Shark').default;
+    
     const shark = await SharkModel.findById(id);
     
     if (!shark) {
@@ -593,7 +588,7 @@ router.patch('/sharks/level/:levelNumber/lock-status', authenticateAdmin, async 
       return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
     }
     
-    const SharkModel = require('../models/Shark').default;
+    
     const result = await SharkModel.updateMany(
       { levelNumber: parseInt(levelNumber) },
       { isLocked: isLocked }
