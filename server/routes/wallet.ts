@@ -1,5 +1,4 @@
 import { Router } from "express";
-import Wallet from '../models/Wallet';
 import Transaction, { TransactionType } from '../models/Transaction'; // Import Transaction model and type
 import RechargeRequest from '../models/RechargeRequest';
 import { connectDb } from '../utils/db';
@@ -122,31 +121,82 @@ router.get("/recharge-requests/:phone", async (req, res) => {
   }
 });
 
-// Recharge wallet (direct - for admin use)
+// Recharge wallet (direct - for admin use) - creates transaction instead of modifying wallet
 router.post("/recharge", async (req, res) => {
-  await connectDb();
-  const { phone, amount } = req.body;
-  if (!phone || !amount) return res.status(400).json({ error: "Missing fields" });
-  let wallet = await Wallet.findOne({ phone });
-  if (!wallet) {
-    wallet = new Wallet({ phone, balance: 0 });
-    await wallet.save();
+  try {
+    await connectDb();
+    const { phone, amount } = req.body;
+    if (!phone || !amount) return res.status(400).json({ error: "Missing fields" });
+    
+    // Create deposit transaction
+    const transactionId = `ADM-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const transaction = new Transaction({
+      phone,
+      type: TransactionType.DEPOSIT,
+      amount: Number(amount),
+      description: 'Direct admin recharge',
+      status: 'completed',
+      transactionId
+    });
+    await transaction.save();
+    
+    res.json({ success: true, transactionId });
+  } catch (error) {
+    console.error('Direct recharge error:', error);
+    res.status(500).json({ error: 'Failed to process recharge' });
   }
-  wallet.balance += Number(amount);
-  await wallet.save();
-  res.json({ success: true });
 });
 
-// Withdraw from wallet
+// Withdraw from wallet (creates withdrawal transaction)
 router.post("/withdraw", async (req, res) => {
-  await connectDb();
-  const { phone, amount } = req.body;
-  if (!phone || !amount) return res.status(400).json({ error: "Missing fields" });
-  let wallet = await Wallet.findOne({ phone });
-  if (!wallet || wallet.balance < amount) return res.status(400).json({ error: "Insufficient balance" });
-  wallet.balance -= Number(amount);
-  await wallet.save();
-  res.json({ success: true });
+  try {
+    await connectDb();
+    const { phone, amount } = req.body;
+    if (!phone || !amount) return res.status(400).json({ error: "Missing fields" });
+    
+    // Check current balance using transaction aggregation
+    const balanceResult = await Transaction.aggregate([
+      { $match: { phone, status: { $ne: 'failed' } } },
+      { $group: {
+        _id: null,
+        balance: { 
+          $sum: { 
+            $switch: {
+              branches: [
+                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+              ],
+              default: 0
+            }
+          }
+        }
+      }}
+    ]);
+    
+    const currentBalance = balanceResult[0]?.balance || 0;
+    if (currentBalance < Number(amount)) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+    
+    // Create withdrawal transaction
+    const transactionId = `WTH-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const transaction = new Transaction({
+      phone,
+      type: TransactionType.WITHDRAWAL,
+      amount: Number(amount),
+      description: 'Direct admin withdrawal',
+      status: 'completed',
+      transactionId
+    });
+    await transaction.save();
+    
+    res.json({ success: true, transactionId });
+  } catch (error) {
+    console.error('Direct withdrawal error:', error);
+    res.status(500).json({ error: 'Failed to process withdrawal' });
+  }
 });
 
 // Get wallet statistics for a user

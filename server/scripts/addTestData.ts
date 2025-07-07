@@ -2,7 +2,6 @@ import { connectDb } from '../utils/db';
 import RechargeRequest from '../models/RechargeRequest';
 import Withdrawal from '../models/Withdrawal';
 import User from '../models/User';
-import Wallet from '../models/Wallet';
 import Transaction from '../models/Transaction';
 import { TransactionType, TransactionStatus } from '../models/Transaction';
 
@@ -31,13 +30,18 @@ async function addTestData() {
         await user.save();
         console.log(`Created test user: ${userData.phone}`);
         
-        // Create wallet for user
-        const wallet = new Wallet({
+        // Create initial deposit transaction instead of wallet
+        const transactionId = `INIT-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        const initialDeposit = new Transaction({
           phone: userData.phone,
-          balance: 5000 // Give them some initial balance
+          type: TransactionType.DEPOSIT,
+          amount: 5000, // Give them some initial balance
+          description: 'Initial test balance',
+          status: TransactionStatus.COMPLETED,
+          transactionId
         });
-        await wallet.save();
-        console.log(`Created wallet for user: ${userData.phone}`);
+        await initialDeposit.save();
+        console.log(`Created initial deposit for user: ${userData.phone}`);
       }
     }
     
@@ -105,13 +109,14 @@ async function addTestData() {
     
     for (const withdrawalData of testWithdrawals) {
       // Create transaction first
+      const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const transaction = new Transaction({
         phone: withdrawalData.phone,
         type: TransactionType.WITHDRAWAL,
         amount: withdrawalData.amount,
-        tax: withdrawalData.tax,
-        netAmount: withdrawalData.netAmount,
-        status: withdrawalData.status === 'PENDING' ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
+        description: `Test withdrawal - ${withdrawalData.phone}`,
+        status: withdrawalData.status === 'PENDING' ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        transactionId
       });
       await transaction.save();
       

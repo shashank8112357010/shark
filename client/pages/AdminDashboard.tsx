@@ -329,17 +329,20 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => navigate('/admin/manage-sharks')}
+          >
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Loss</p>
-                  <p className="text-xl sm:text-2xl font-bold text-red-600">
-                    {formatCurrency(stats?.withdrawals.completed * 50 || 0)}
+                  <p className="text-sm font-medium text-gray-600">Manage Sharks</p>
+                  <p className="text-xl sm:text-2xl font-bold text-indigo-600">
+                    Control
                   </p>
-                  <p className="text-xs text-gray-500">Transaction costs</p>
+                  <p className="text-xs text-gray-500">Lock/Unlock sharks</p>
                 </div>
-                <TrendingDown className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+                <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600" />
               </div>
             </CardContent>
           </Card>

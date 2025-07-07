@@ -3,10 +3,8 @@ import Admin from '../models/Admin';
 import User from '../models/User';
 import RechargeRequest from '../models/RechargeRequest';
 import Withdrawal from '../models/Withdrawal';
-import Wallet from '../models/Wallet';
 import { connectDb } from '../utils/db';
 import jwt from 'jsonwebtoken';
-
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key';
 
@@ -95,15 +93,38 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
     const approvedWithdrawals = await Withdrawal.countDocuments({ status: 'APPROVED' });
     const completedWithdrawals = await Withdrawal.countDocuments({ status: 'COMPLETED' });
 
-    // Calculate total wallet balances
-    const walletStats = await Wallet.aggregate([
+    // Calculate total wallet balances using Transaction aggregation
+    const Transaction = require('../models/Transaction').default;
+    const { TransactionType } = require('../models/Transaction');
+    
+    const walletStats = await Transaction.aggregate([
+      { $match: { status: { $ne: 'failed' } } },
+      {
+        $group: {
+          _id: "$phone",
+          balance: { 
+            $sum: { 
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                  { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                  { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                  { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+                ],
+                default: 0
+              }
+            }
+          }
+        }
+      },
       {
         $group: {
           _id: null,
           totalBalance: { $sum: '$balance' },
           avgBalance: { $avg: '$balance' },
           minBalance: { $min: '$balance' },
-          maxBalance: { $max: '$balance' }
+          maxBalance: { $max: '$balance' },
+          totalWallets: { $sum: 1 }
         }
       }
     ]);
@@ -141,7 +162,8 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
           totalBalance: 0,
           avgBalance: 0,
           minBalance: 0,
-          maxBalance: 0
+          maxBalance: 0,
+          totalWallets: 0
         },
         recent: {
           recharges: recentRecharges,
@@ -228,20 +250,10 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
 
     await rechargeRequest.save();
 
-    // If approved, update user wallet with approved amount
+    // If approved, create transaction record (balance is calculated from transactions)
     if (status === 'approved') {
       const amountToAdd = approvedAmount || rechargeRequest.amount;
-      let wallet = await Wallet.findOne({ phone: rechargeRequest.phone });
-      if (!wallet) {
-        wallet = new Wallet({
-          phone: rechargeRequest.phone,
-          balance: amountToAdd
-        });
-      } else {
-        wallet.balance += amountToAdd;
-      }
-      await wallet.save();
-
+      
       // Create transaction record
       const Transaction = require('../models/Transaction').default;
       // Generate a unique transactionId (e.g., using timestamp and random string)
@@ -253,7 +265,10 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
         description: `Recharge approved by ${admin.email}`,
         status: 'completed', // lowercase to match enum
         transactionId, // required unique field
-        reference: rechargeRequest._id
+        metadata: {
+          rechargeRequestId: rechargeRequest._id,
+          utrNumber: rechargeRequest.utrNumber
+        }
       });
       await transaction.save();
     }
@@ -428,13 +443,37 @@ router.get('/users', authenticateAdmin, async (req, res) => {
 
     const total = await User.countDocuments();
 
-    // Get wallet balances for each user
+    // Get wallet balances for each user using transaction aggregation
+    const Transaction = require('../models/Transaction').default;
+    const { TransactionType } = require('../models/Transaction');
+    
     const usersWithWallets = await Promise.all(
       users.map(async (user) => {
-        const wallet = await Wallet.findOne({ phone: user.phone });
+        // Calculate balance using Transaction aggregation
+        const balanceResult = await Transaction.aggregate([
+          { $match: { phone: user.phone, status: { $ne: 'failed' } } },
+          { $group: {
+            _id: null,
+            balance: { 
+              $sum: { 
+                $switch: {
+                  branches: [
+                    { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                    { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                    { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                    { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+                  ],
+                  default: 0
+                }
+              }
+            }
+          }}
+        ]);
+        
+        const balance = balanceResult[0]?.balance || 0;
         return {
           ...user.toObject(),
-          walletBalance: wallet ? wallet.balance : 0
+          walletBalance: balance
         };
       })
     );
@@ -451,6 +490,120 @@ router.get('/users', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Get all sharks for management
+router.get('/sharks', authenticateAdmin, async (req, res) => {
+  try {
+    await connectDb();
+    
+    const SharkModel = require('../models/Shark').default;
+    const sharks = await SharkModel.find().sort({ levelNumber: 1, price: 1 });
+    
+    // Group by levels
+    const levelMap = new Map();
+    sharks.forEach(shark => {
+      const level = shark.levelNumber;
+      if (!levelMap.has(level)) {
+        levelMap.set(level, []);
+      }
+      levelMap.get(level).push({
+        id: shark._id.toString(),
+        title: shark.title,
+        image: shark.image,
+        price: shark.price,
+        totalReturn: shark.totalReturn,
+        dailyIncome: shark.dailyIncome,
+        durationDays: shark.durationDays,
+        isLocked: shark.isLocked || false,
+        levelNumber: shark.levelNumber
+      });
+    });
+    
+    const levels = Array.from(levelMap.entries()).map(([levelNumber, sharks]) => ({
+      level: levelNumber,
+      sharks: sharks
+    })).sort((a, b) => a.level - b.level);
+    
+    res.json({
+      success: true,
+      levels
+    });
+  } catch (error) {
+    console.error('Get sharks error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Update shark lock status
+router.patch('/sharks/:id/lock-status', authenticateAdmin, async (req, res) => {
+  try {
+    await connectDb();
+    const { id } = req.params;
+    const { isLocked } = req.body;
+    const admin = req.admin;
+    
+    if (typeof isLocked !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
+    }
+    
+    const SharkModel = require('../models/Shark').default;
+    const shark = await SharkModel.findById(id);
+    
+    if (!shark) {
+      return res.status(404).json({ success: false, error: 'Shark not found' });
+    }
+    
+    shark.isLocked = isLocked;
+    await shark.save();
+    
+    console.log(`Admin ${admin.email} ${isLocked ? 'locked' : 'unlocked'} shark: ${shark.title}`);
+    
+    res.json({
+      success: true,
+      message: `Shark ${isLocked ? 'locked' : 'unlocked'} successfully`,
+      shark: {
+        id: shark._id.toString(),
+        title: shark.title,
+        isLocked: shark.isLocked,
+        levelNumber: shark.levelNumber
+      }
+    });
+  } catch (error) {
+    console.error('Update shark lock status error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Bulk update sharks in a level
+router.patch('/sharks/level/:levelNumber/lock-status', authenticateAdmin, async (req, res) => {
+  try {
+    await connectDb();
+    const { levelNumber } = req.params;
+    const { isLocked } = req.body;
+    const admin = req.admin;
+    
+    if (typeof isLocked !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
+    }
+    
+    const SharkModel = require('../models/Shark').default;
+    const result = await SharkModel.updateMany(
+      { levelNumber: parseInt(levelNumber) },
+      { isLocked: isLocked }
+    );
+    
+    console.log(`Admin ${admin.email} ${isLocked ? 'locked' : 'unlocked'} all sharks in level ${levelNumber}`);
+    
+    res.json({
+      success: true,
+      message: `All sharks in Level ${levelNumber} ${isLocked ? 'locked' : 'unlocked'} successfully`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Bulk update sharks error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

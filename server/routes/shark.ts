@@ -1,6 +1,5 @@
 import { Router } from "express";
 import SharkInvestment from "../models/SharkInvestment";
-import Wallet from "../models/Wallet";
 import Transaction, { TransactionType, TransactionStatus } from "../models/Transaction";
 import Referral from "../models/Referral";
 import User from "../models/User";
@@ -19,21 +18,22 @@ function generateTransactionId() {
 router.post("/buy", async (req, res) => {
   try {
     await connectDb();
-    const { phone, shark, price, level } = req.body;
+    const { phone, shark, price, level, sharkId } = req.body;
 
     if (!phone || !shark || !price || !level) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
-    // Check if user has already purchased a shark at this level
+    // Check if user has already purchased this specific shark
     const existingPurchase = await SharkInvestment.findOne({ 
       phone, 
+      shark: shark, // Check for specific shark name
       level: Number(level)
     });
     
     if (existingPurchase) {
       return res.status(400).json({ 
-        error: `You have already purchased a shark at Level ${level}. Each level can only be purchased once.` 
+        error: `You have already purchased ${shark}. Each shark can only be purchased once.` 
       });
     }
 
@@ -348,11 +348,15 @@ router.get("/levels/:phone", async (req, res) => {
     await connectDb();
     const userPhone = req.params.phone;
     
-    // Get user's purchased levels (filter out records without level field)
+    // Get user's purchased sharks (individual sharks, not levels)
     const userPurchases = await SharkInvestment.find({ 
-      phone: userPhone, 
-      level: { $exists: true, $ne: null } 
-    }).select('level');
+      phone: userPhone
+    }).select('shark level');
+    
+    // Create a set of purchased shark names for quick lookup
+    const purchasedSharks = new Set(userPurchases.map(p => p.shark));
+    
+    // Also track purchased levels for level-level checking
     const purchasedLevels = new Set(userPurchases.map(p => p.level).filter(level => level !== undefined && level !== null));
     
     const allSharksFromDB = await SharkModel.find().sort({ levelNumber: 1, price: 1 }).lean();
@@ -361,7 +365,7 @@ router.get("/levels/:phone", async (req, res) => {
       return res.json({ levels: [] });
     }
 
-    // Group sharks by levelNumber and mark if purchased
+    // Group sharks by levelNumber and mark individual sharks as purchased
     const levelsMap = new Map<number, any[]>();
     allSharksFromDB.forEach(shark => {
       const level = shark.levelNumber;
@@ -378,15 +382,20 @@ router.get("/levels/:phone", async (req, res) => {
         isLocked: shark.isLocked,
         daily: shark.dailyIncome,
         endDay: shark.durationDays,
-        isPurchased: purchasedLevels.has(level) // Mark if this level is purchased
+        isPurchased: purchasedSharks.has(shark.title) // Mark if this specific shark is purchased
       });
     });
 
-    const structuredLevels = Array.from(levelsMap.entries()).map(([levelNumber, sharks]) => ({
-      level: levelNumber,
-      sharks: sharks,
-      isPurchased: purchasedLevels.has(levelNumber)
-    })).sort((a, b) => a.level - b.level);
+    const structuredLevels = Array.from(levelsMap.entries()).map(([levelNumber, sharks]) => {
+      // A level is considered purchased if ALL sharks in that level are purchased
+      const allSharksPurchased = sharks.every(shark => shark.isPurchased);
+      
+      return {
+        level: levelNumber,
+        sharks: sharks,
+        isPurchased: allSharksPurchased // Only mark level as purchased if ALL sharks are purchased
+      };
+    }).sort((a, b) => a.level - b.level);
 
     res.json({ levels: structuredLevels });
 
