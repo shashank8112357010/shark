@@ -410,6 +410,8 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {currentLevelSharkData.sharks.map((shark) => {
+                  console.log("Shark", shark);
+                  
                   const isCurrentSharkLoading =
                     buyLoading === `${selectedLevel}-${shark.id}`;
                   return (
@@ -422,7 +424,7 @@ const Dashboard = () => {
                       total={shark.total}
                       daily={shark.daily}
                       endDay={shark.endDay}
-                      isLocked={shark.isLocked || shark.isPurchased} // Lock if already purchased
+                      isLocked={shark.isLocked} // Lock if already purchased
                       onBuy={() => handleBuyLevel(shark)}
                       buyLoading={isCurrentSharkLoading}
                       isPurchased={shark.isPurchased}

@@ -309,6 +309,7 @@ router.get("/levels", async (req, res) => {
         id: shark._id.toString(), // Use MongoDB _id as id
         title: shark.title,
         image: shark.image,
+        
         price: shark.price,
         total: shark.totalReturn, // Map from totalReturn
         daily: shark.dailyIncome, // Map from dailyIncome
@@ -374,6 +375,7 @@ router.get("/levels/:phone", async (req, res) => {
         image: shark.image,
         price: shark.price,
         total: shark.totalReturn,
+        isLocked: shark.isLocked,
         daily: shark.dailyIncome,
         endDay: shark.durationDays,
         isPurchased: purchasedLevels.has(level) // Mark if this level is purchased

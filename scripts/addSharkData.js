@@ -16,6 +16,8 @@ const SharkSchema = new mongoose.Schema({
   title: { type: String, required: true },
   image: { type: String, required: true },
   price: { type: Number, required: true },
+  isLocked: { type: Boolean, required: true },
+  isPurchased: { type: Boolean, required: true },
   totalReturn: { type: Number, required: true },
   dailyIncome: { type: Number, required: true },
   durationDays: { type: Number, required: true },
@@ -32,6 +34,8 @@ const sampleSharks = [
     price: 499,
     totalReturn: 10800,
     dailyIncome: 90,
+    isLocked: false,
+    isPurchased: false,
     durationDays: 120,
     levelNumber: 1
   },
@@ -41,6 +45,8 @@ const sampleSharks = [
     price: 1990,
     totalReturn: 37400,
     dailyIncome: 340,
+    isLocked: false,
+    isPurchased: false,
     durationDays: 110,
     levelNumber: 1
   },
@@ -52,6 +58,9 @@ const sampleSharks = [
     price: 4980,
     totalReturn: 138300,
     dailyIncome: 1383,
+    isLocked: true,
+    isPurchased: false,
+
     durationDays: 100,
     levelNumber: 2
   },
@@ -60,6 +69,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 16890,
     totalReturn: 496700,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 4967,
     durationDays: 100,
     levelNumber: 2
@@ -69,6 +80,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 5000,
     totalReturn: 9000,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 3000,
     durationDays: 3,
     levelNumber: 2
@@ -80,6 +93,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 29800,
     totalReturn: 838080,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 9312,
     durationDays: 90,
     levelNumber: 3
@@ -89,6 +104,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 46800,
     totalReturn: 1290960,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 16137,
     durationDays: 80,
     levelNumber: 3
@@ -99,6 +116,8 @@ const sampleSharks = [
     price: 10000,
     totalReturn: 18000,
     dailyIncome: 6000,
+    isLocked: true,
+    isPurchased: false,
     durationDays: 3,
     levelNumber: 3
   },
@@ -109,6 +128,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 79800,
     totalReturn: 2234400,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 31920,
     durationDays: 70,
     levelNumber: 4
@@ -119,6 +140,8 @@ const sampleSharks = [
     price: 129800,
     totalReturn: 1947000,
     dailyIncome: 64900,
+    isLocked: true,
+    isPurchased: false,
     durationDays: 30,
     levelNumber: 4
   },
@@ -127,6 +150,8 @@ const sampleSharks = [
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 20000,
     totalReturn: 36000,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 12000,
     durationDays: 3,
     levelNumber: 4
@@ -140,13 +165,17 @@ const sampleSharks = [
     totalReturn: 21066600,
     dailyIncome: 105333,
     durationDays: 200,
-    levelNumber: 5
+    levelNumber: 5,
+    isLocked: true,
+    isPurchased: false,
   },
   {
     title: "Shark VIP 4",
     image: "https://cdn.builder.io/api/v1/image/assets%2F01a259d5bb5845f29797ea6857fc598b%2Fb915896bfba24472a9e1c592ba472dcc?format=webp&width=800",
     price: 30000,
     totalReturn: 54000,
+    isLocked: true,
+    isPurchased: false,
     dailyIncome: 18000,
     durationDays: 3,
     levelNumber: 5
