@@ -120,24 +120,25 @@ router.post("/request", async (req, res) => {
 
     // Check wallet balance using Transaction aggregation
     const balanceResult = await Transaction.aggregate([
-      { $match: { phone, status: { $ne: TransactionStatus.FAILED } } },
-      { $group: {
-        _id: null,
-        balance: { 
-          $sum: { 
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-              ],
-              default: 0
-            }
-          }
-        }
-      }}
-    ]);
+       { $match: { phone, status: TransactionStatus.COMPLETED } }, // Only count completed transactions
+       { $group: {
+         _id: null,
+         balance: { 
+           $sum: { 
+             $switch: {
+               branches: [
+                 { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                 { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+                 { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
+                 { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
+               ],
+               default: 0
+             }
+           }
+         }
+       }}
+     ]);
+
     const balance = balanceResult[0]?.balance || 0;
     console.log('Balance calculation result:', balanceResult);
     console.log('Current balance:', balance);
@@ -157,7 +158,6 @@ router.post("/request", async (req, res) => {
       phone,
       type: TransactionType.WITHDRAWAL,
       amount,
-      status: TransactionStatus.PENDING,
       transactionId,
       description: `Withdrawal request to UPI: ${upiId}`
     });
@@ -176,7 +176,7 @@ router.post("/request", async (req, res) => {
       tax,
       netAmount,
       transactionId: transaction._id,
-      status: TransactionStatus.PENDING,
+
       upiId
     });
     await withdrawal.save();

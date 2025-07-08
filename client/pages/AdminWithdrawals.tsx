@@ -446,6 +446,10 @@ const AdminWithdrawals = () => {
                             <p className="font-semibold text-lg">{formatCurrency(withdrawal.amount)}</p>
                           </div>
                           <div>
+                            <p className="text-sm text-gray-600">UPI ID</p>
+                            <p className="font-semibold text-sm">{withdrawal.upiId}</p>
+                          </div>
+                          <div>
                             <p className="text-sm text-gray-600">Tax</p>
                             <p className="text-sm text-red-600">{formatCurrency(withdrawal.tax)}</p>
                           </div>
@@ -582,6 +586,10 @@ const AdminWithdrawals = () => {
                     <Label>Status</Label>
                     {getStatusBadge(selectedWithdrawal.status)}
                   </div>
+                  {/* <div>
+                    <Label>UPI ID</Label>
+                    {selectedWithdrawal.upiId}
+                  </div> */}
                   <div>
                     <Label>Amount</Label>
                     <p className="font-semibold text-lg">{formatCurrency(selectedWithdrawal.amount)}</p>
