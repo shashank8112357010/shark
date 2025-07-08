@@ -21,6 +21,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async () => {
     try {
+  
+      
       setLoading(true);
       setError(null);
 

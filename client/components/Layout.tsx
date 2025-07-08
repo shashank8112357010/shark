@@ -1,4 +1,4 @@
-import { ReactNode, memo } from "react";
+import { ReactNode, memo, useEffect } from "react";
 import BottomNavigation from "./BottomNavigation";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -21,6 +21,10 @@ const Layout = ({
   const user = userData || null;
   const balance = userData?.balance || 0;
   const currentReferrals = userData?.referrer ? 1 : 0;
+
+  useEffect(() => {
+    refreshUserData();
+  }, []);
 
 
   return (
