@@ -99,6 +99,10 @@ const Withdraw = () => {
       const limitsData = await limitsRes.json();
       const historyData = await historyRes.json();
 
+      console.log(limitsData , "limitsData");
+      console.log(historyData , "historyData");
+      
+
       setLimits({
         ...limitsData,
         openTime: limitsData.timeWindow?.start,
@@ -126,11 +130,11 @@ const Withdraw = () => {
 
 
   useEffect(() => {
-    if (userLoading) {
-      // Still loading user context, keep page loading
-      setPageLoading(true);
-      return;
-    }
+    // if (userLoading) {
+    //   // Still loading user context, keep page loading
+    //   setPageLoading(true);
+    //   return;
+    // }
     
     if (userData?.phone) {
       // User is logged in, fetch withdrawal data

@@ -11,20 +11,21 @@ const router = Router();
 // Helper function to check if withdrawal time is valid (8 AM - 10 PM IST, Monday-Friday)
 function isWithdrawalTimeValid(): boolean {
   const now = new Date();
-  // Convert to IST (UTC + 5:30)
-  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-  const istTime = new Date(now.getTime() + istOffset);
-  
-  const hour = istTime.getHours();
-  const day = istTime.getDay(); // 0 = Sunday, 6 = Saturday
-  
-  // Closed on Saturday and Sunday
-  if (day === 0 || day === 6) return false;
-  
-  // Open from 8 AM to 10 PM (22:00) IST
-  return hour >= 8 && hour < 22;
-}
+  // Calculate IST time from UTC
+  const istHour = (now.getUTCHours() + 5 + Math.floor((now.getUTCMinutes() + 30) / 60)) % 24;
+  const istMinute = (now.getUTCMinutes() + 30) % 60;
+  // Calculate IST day (IST is ahead of UTC, so day may change)
+  let istDay = now.getUTCDay();
+  if (now.getUTCHours() + ((now.getUTCMinutes() + 30) / 60) >= 24) {
+    istDay = (istDay + 1) % 7;
+  }
 
+  // Closed on Saturday (6) and Sunday (0)
+  if (istDay === 0 || istDay === 6) return false;
+
+  // Open from 8 AM to 10 PM (22:00) IST
+  return istHour >= 8 && istHour < 22;
+}
 // Get withdrawal history
 router.get("/:phone/history", async (req, res) => {
   await connectDb();

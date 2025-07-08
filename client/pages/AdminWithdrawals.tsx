@@ -21,7 +21,6 @@ interface WithdrawalRequest {
   adminNotes?: string;
   reviewedBy?: string;
   reviewedAt?: string;
-  paymentProof?: string;
   paymentUtr?: string;
   createdAt: string;
   updatedAt: string;
@@ -36,7 +35,6 @@ const AdminWithdrawals = () => {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalRequest | null>(null);
   const [approvalData, setApprovalData] = useState({
-    paymentProof: '',
     paymentUtr: '',
     adminNotes: ''
   });
@@ -131,11 +129,11 @@ const AdminWithdrawals = () => {
   };
 
   const handleApprove = async () => {
-    if (!selectedWithdrawal || !approvalData.paymentProof || !approvalData.paymentUtr) {
+    if (!selectedWithdrawal || !approvalData.paymentUtr) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Payment proof and UTR are required',
+        description: 'Payment UTR is required',
       });
       return;
     }
@@ -228,7 +226,7 @@ const AdminWithdrawals = () => {
   const closeDialog = () => {
     setSelectedWithdrawal(null);
     setDialogMode('view');
-    setApprovalData({ paymentProof: '', paymentUtr: '', adminNotes: '' });
+    setApprovalData({paymentUtr: '', adminNotes: '' });
     setRejectionData({ adminNotes: '' });
   };
 
@@ -272,19 +270,7 @@ const AdminWithdrawals = () => {
     withdrawal.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you'd upload to a service like CloudFront, S3, etc.
-      // For demo purposes, we'll convert to base64
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        setApprovalData(prev => ({ ...prev, paymentProof: base64 }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -447,7 +433,7 @@ const AdminWithdrawals = () => {
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">UPI ID</p>
-                            <p className="font-semibold text-sm">{withdrawal.upiId}</p>
+                            <p className="font-semibold text-sm">{withdrawal?.upiId}</p>
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">Tax</p>
@@ -608,41 +594,11 @@ const AdminWithdrawals = () => {
                   </div>
                 </div>
 
-                {selectedWithdrawal.paymentProof && (
-                  <div>
-                    <Label>Payment Proof</Label>
-                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                      <img 
-                        src={selectedWithdrawal.paymentProof} 
-                        alt="Payment Proof" 
-                        className="max-w-full h-auto rounded"
-                      />
-                    </div>
-                  </div>
-                )}
+               
 
                 {dialogMode === 'approve' && (
                   <>
-                    <div>
-                      <Label htmlFor="paymentProof">Payment Proof (Screenshot) *</Label>
-                      <div className="mt-2">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileUpload}
-                          className="mb-2"
-                        />
-                        {approvalData.paymentProof && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded">
-                            <img 
-                              src={approvalData.paymentProof} 
-                              alt="Payment Proof Preview" 
-                              className="max-w-32 h-auto rounded"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                  
 
                     <div>
                       <Label htmlFor="utr">Payment UTR Number *</Label>
@@ -671,7 +627,7 @@ const AdminWithdrawals = () => {
                       </Button>
                       <Button
                         onClick={handleApprove}
-                        disabled={!approvalData.paymentProof || !approvalData.paymentUtr || processingId === selectedWithdrawal._id}
+                        disabled={ !approvalData.paymentUtr || processingId === selectedWithdrawal._id}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         {processingId === selectedWithdrawal._id ? (

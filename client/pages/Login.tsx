@@ -3,9 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Phone, Lock, Key, Users } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
 
 const Login = () => {
   const navigate = useNavigate();
+   const { userData , refreshUserData } = useUser();
   const location = useLocation();
 
   const [isLogin, setIsLogin] = useState(false);
@@ -59,6 +61,7 @@ const Login = () => {
         const data = await res.json();
         if (!data.success) throw new Error(data.error || "Login failed");
         localStorage.setItem("user", JSON.stringify(data.user));
+        refreshUserData();
         navigate("/dashboard");
       } else {
         if (formData.password !== formData.confirmPassword) {

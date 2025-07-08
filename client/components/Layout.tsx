@@ -22,9 +22,9 @@ const Layout = ({
   const balance = userData?.balance || 0;
   const currentReferrals = userData?.referrer ? 1 : 0;
 
-  useEffect(() => {
-    refreshUserData();
-  }, []);
+  // useEffect(() => {
+  //   refreshUserData();
+  // }, []);
 
 
   return (

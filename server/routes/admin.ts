@@ -330,11 +330,11 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
   try {
     await connectDb();
     const { id } = req.params;
-    const { paymentProof, paymentUtr, adminNotes } = req.body;
+    const {  paymentUtr, adminNotes } = req.body;
     const admin = req.admin;
 
-    if (!paymentProof || !paymentUtr) {
-      return res.status(400).json({ success: false, error: 'Payment proof and UTR are required' });
+    if (!paymentUtr) {
+      return res.status(400).json({ success: false, error: 'Payment UTR is required' });
     }
 
     const withdrawal = await Withdrawal.findById(id);
@@ -347,7 +347,7 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
     }
 
     withdrawal.status = 'COMPLETED';
-    withdrawal.paymentProof = paymentProof;
+    withdrawal.paymentProof = "";
     withdrawal.paymentUtr = paymentUtr;
     withdrawal.adminNotes = adminNotes;
     withdrawal.reviewedBy = admin.email;
