@@ -5,6 +5,7 @@ export interface IReferral extends Document {
   referred: string; // phone number of the referred user
   reward: number;   // reward given for this referral (if any)
   date: Date;
+  transactionId?: string; // reference to the reward transaction
 }
 
 const ReferralSchema = new Schema<IReferral>({
@@ -12,6 +13,7 @@ const ReferralSchema = new Schema<IReferral>({
   referred: { type: String, required: true },
   reward: { type: Number, default: 0 },
   date: { type: Date, default: Date.now },
+  transactionId: { type: String },
 });
 
 export default mongoose.models.Referral || mongoose.model<IReferral>('Referral', ReferralSchema);

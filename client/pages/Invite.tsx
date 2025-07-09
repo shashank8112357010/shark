@@ -15,7 +15,7 @@ const Invite = () => {
   const { handleStateChange } = useStateChange();
   const { userData, loading: userLoading } = useUser();
   const [copied, setCopied] = useState(false);
-  const [referralBonus, setReferralBonus] = useState<number | null>(null);
+  const [referralBonus, setReferralBonus] = useState<number | null>(200);
   const [configLoading, setConfigLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ const Invite = () => {
           title: "Could not load referral bonus",
           description: error.message,
         });
-        setReferralBonus(150); // Fallback to a default if API fails, or null to hide message
+        setReferralBonus(200); // Fallback to a default if API fails, or null to hide message
       } finally {
         setConfigLoading(false);
       }
@@ -192,7 +192,7 @@ const Invite = () => {
             </div>
             {(referralBonus !== null && referralBonus > 0) && (
               <div className="mt-2 text-green-600 text-sm font-semibold">
-                {configLoading ? "Loading bonus info..." : `Earn ₹${referralBonus} for every friend who registers and completes onboarding!`}
+                {configLoading ? "Loading bonus info..." : `Earn ₹ 200  for every friend who registers and completes onboarding!`}
               </div>
             )}
             {(referralBonus === 0 && !configLoading) && (

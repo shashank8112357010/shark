@@ -1,6 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import User from '../models/User';
+import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
+import Referral from '../models/Referral';
 import { connectDb } from '../utils/db';
 import QRCode from 'qrcode';
 
@@ -31,7 +33,7 @@ router.post("/register", async (req, res) => {
   try {
     await connectDb();
     const { phone, password, withdrawalPassword } = req.body;
-    
+
     if (!phone || !password || !withdrawalPassword) {
       return res.status(400).json({ error: "Phone, password, and withdrawal password are required" });
     }
@@ -45,8 +47,17 @@ router.post("/register", async (req, res) => {
     // Generate invite code
     let userInviteCode = generateInviteCode();
     
-    // Get referrer from query parameter if available
-    const referrer = req.query.referrer ? String(req.query.referrer) : undefined;
+    // Get referrer from query parameter or request body
+    const referrerCode = req.query.referrer ? String(req.query.referrer) : req.body.inviteCode;
+    let referrer = undefined;
+    
+    // If referrer code is provided, find the user by invite code
+    if (referrerCode) {
+      const referrerUser = await User.findOne({ inviteCode: referrerCode });
+      if (referrerUser) {
+        referrer = referrerUser.phone;
+      }
+    }
 
     // Hash passwords
     const hash = await bcrypt.hash(password, 10);
@@ -69,6 +80,31 @@ router.post("/register", async (req, res) => {
 
     // Generate referral link
     const referralLink = generateReferralLink(userInviteCode);
+    
+    // If referrer exists, create a referral reward transaction
+    if (referrer) {
+      const transactionId = `REF-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      const rewardTransaction = new Transaction({
+        phone: referrer,
+        type: TransactionType.REFERRAL,
+        amount: 200,
+        status: TransactionStatus.COMPLETED,
+        transactionId,
+        description: `Referral reward for referring ${phone}`
+      });
+      await rewardTransaction.save();
+      
+      // Create referral record
+      const referralRecord = new Referral({
+        referrer,
+        referred: phone,
+        reward: 200,
+        transactionId,
+        date: new Date()
+      });
+      await referralRecord.save();
+    }
     
     res.json({ 
       success: true, 

@@ -70,17 +70,22 @@ router.get("/rewards/:phone", async (req, res) => {
 
 // Get referral configuration (e.g., bonus amount)
 router.get("/config", (req, res) => {
-  // User should set REFERRAL_BONUS_AMOUNT in their .env file
+  // Fixed registration bonus amount
+  const registrationBonusAmount = 200;
+  
+  // User should set REFERRAL_BONUS_AMOUNT in their .env file for transaction-based rewards
   const bonusAmount = process.env.REFERRAL_BONUS_AMOUNT;
   if (bonusAmount && !isNaN(Number(bonusAmount))) {
-    res.json({ referralBonusAmount: Number(bonusAmount) });
+    res.json({ 
+      referralBonusAmount: Number(bonusAmount),
+      registrationBonusAmount 
+    });
   } else {
-    // Fallback or error if not set or invalid
-    console.warn("REFERRAL_BONUS_AMOUNT not set or invalid in .env file. Using default of 0.");
-    res.status(500).json({
-        error: "Referral configuration not available.",
-        message: "Administrator: Please set REFERRAL_BONUS_AMOUNT in the .env file.",
-        referralBonusAmount: 0 // Default fallback
+    // Fallback showing only registration bonus
+    res.json({
+        referralBonusAmount: 0,
+        registrationBonusAmount,
+        message: "Registration bonus: 200 per referral"
     });
   }
 });

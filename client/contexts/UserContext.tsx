@@ -6,6 +6,7 @@ interface UserContextType {
   loading: boolean;
   error: string | null;
   refreshUserData: () => void;
+  setUserData: (userData: UserData | null) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -53,7 +54,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       const updatedUserData = {
         ...userData,
         balance: balanceData.balance || 0,
-        referrer: userData.referrer || null,
+        referrer: referralData.count || null,
         qrCode: userData.qrCode || null
       };
 
@@ -69,7 +70,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ userData, loading, error, refreshUserData: fetchUserData }}>
+    <UserContext.Provider value={{ userData, loading, error, setUserData , refreshUserData: fetchUserData }}>
       {children}
     </UserContext.Provider>
   );

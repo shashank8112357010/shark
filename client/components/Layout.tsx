@@ -20,8 +20,7 @@ const Layout = ({
   const { userData, loading, refreshUserData } = useUser();
   const user = userData || null;
   const balance = userData?.balance || 0;
-  const currentReferrals = userData?.referrer ? 1 : 0;
-
+  const currentReferrals = userData?.referrer || 0;
   // useEffect(() => {
   //   refreshUserData();
   // }, []);
