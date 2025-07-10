@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import Layout from "@/components/Layout";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { useUserData } from "@/hooks/useUserData";
+import { useUser } from "@/contexts/UserContext";
 import { Copy, Share2, Users, TrendingUp } from "lucide-react";
 
 const ReferralHistory = () => {
-  const { userData, loading } = useUserData();
+  const { userData, loading } = useUser();
   const [referralHistory, setReferralHistory] = useState<any[]>([]);
   const [totalRewards, setTotalRewards] = useState(0);
 

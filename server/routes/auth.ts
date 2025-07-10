@@ -81,30 +81,8 @@ router.post("/register", async (req, res) => {
     // Generate referral link
     const referralLink = generateReferralLink(userInviteCode);
     
-    // If referrer exists, create a referral reward transaction
-    if (referrer) {
-      const transactionId = `REF-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      
-      const rewardTransaction = new Transaction({
-        phone: referrer,
-        type: TransactionType.REFERRAL,
-        amount: 200,
-        status: TransactionStatus.COMPLETED,
-        transactionId,
-        description: `Referral reward for referring ${phone}`
-      });
-      await rewardTransaction.save();
-      
-      // Create referral record
-      const referralRecord = new Referral({
-        referrer,
-        referred: phone,
-        reward: 200,
-        transactionId,
-        date: new Date()
-      });
-      await referralRecord.save();
-    }
+    // Note: Referral rewards are now only given when referred user buys shark
+    // Registration no longer gives immediate reward
     
     res.json({ 
       success: true, 

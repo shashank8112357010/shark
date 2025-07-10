@@ -16,6 +16,7 @@ import Channel from "./pages/Channel";
 import Online from "./pages/Online";
 import HistoryPage from "./pages/History"; // Import History page
 import SharkHistory from "./pages/SharkHistory"; // Import Shark History page
+import ReferralAmountHistory from "./pages/ReferralAmountHistory"; // Import Referral Amount History page
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/online" element={<Online />} />
           <Route path="/history" element={<HistoryPage />} /> {/* Add History page route */}
           <Route path="/shark-history" element={<SharkHistory />} /> {/* Add Shark History page route */}
+          <Route path="/referral-history" element={<ReferralAmountHistory />} /> {/* Add Referral Amount History page route */}
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

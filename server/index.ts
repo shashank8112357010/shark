@@ -6,6 +6,7 @@ import authRouter from "./routes/auth";
 import walletRouter from "./routes/wallet";
 import sharkRouter from "./routes/shark";
 import referralRouter from "./routes/referral";
+import referralAmountRouter from "./routes/referralAmount";
 import withdrawRouter from "./routes/withdraw";
 import adminRouter from "./routes/admin";
 import incomeRouter from "./routes/income";
@@ -37,6 +38,10 @@ export function createServer() {
 
   // Add referral routes
   app.use("/api/referral", referralRouter);
+  
+  // Add referral amount routes (new system)
+  app.use("/api/referral-amount", referralAmountRouter);
+  
   app.use("/api/withdraw", withdrawRouter);
   
   // Add income routes

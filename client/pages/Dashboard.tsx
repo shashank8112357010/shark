@@ -48,7 +48,7 @@ const Dashboard = () => {
   const [balance, setBalance] = useState(0);
   const [buyLoading, setBuyLoading] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [currentReferrals, setCurrentReferrals] = useState(0);
+  // Referral data now comes from UserContext
   const [user, setUser] = useState<any>(null);
 
   // Mock data for initial load
@@ -271,11 +271,6 @@ const Dashboard = () => {
 
     const u = JSON.parse(localStorage.getItem("user") || "{}");
     setUser(u);
-    if (u.phone) {
-      fetch(`/api/referral/count/${u.phone}`)
-        .then((res) => res.json())
-        .then((data) => setCurrentReferrals(data.count || 0));
-    }
   }, []);
 
   const handleBuyLevel = async (shark: Shark) => {

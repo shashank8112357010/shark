@@ -33,11 +33,12 @@ function calculateReferralReward(transactionAmount: number): number {
   return transactionAmount * baseReward; // 10% for small transactions
 }
 
-// Get referral count for a user
+// DEPRECATED: Old referral count endpoint - use /api/referral-amount/stats instead
+// Keeping for backward compatibility, but returns 0 since we use new system
 router.get("/count/:phone", async (req, res) => {
   await connectDb();
-  const count = await Referral.countDocuments({ referrer: req.params.phone });
-  res.json({ count });
+  // Return 0 since we're using the new referral amount system
+  res.json({ count: 0, deprecated: true, message: "Use /api/referral-amount/stats for current referral data" });
 });
 
 // Get all referrals (history) for a user

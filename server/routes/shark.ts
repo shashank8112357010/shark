@@ -2,6 +2,7 @@ import { Router } from "express";
 import SharkInvestment from "../models/SharkInvestment";
 import Transaction, { TransactionType, TransactionStatus } from "../models/Transaction";
 import Referral from "../models/Referral";
+import ReferralAmount from "../models/ReferralAmount";
 import User from "../models/User";
 import SharkModel, { IShark } from "../models/Shark"; // Import the new Shark model
 import { connectDb } from "../utils/db";
@@ -96,42 +97,56 @@ router.post("/buy", async (req, res) => {
     });
     await investment.save();
 
+    // New referral system - only reward for FIRST shark purchase by referred user
     const user = await User.findOne({ phone });
     if (user?.referrer) {
-      // Use the configured referral bonus amount, with a default fallback if not set
-      const configuredBonusAmount = process.env.REFERRAL_BONUS_AMOUNT;
-      let rewardAmount = 150; // Default fallback, ideally manage this default centrally if possible
-      if (configuredBonusAmount && !isNaN(Number(configuredBonusAmount)) && Number(configuredBonusAmount) > 0) {
-        rewardAmount = Number(configuredBonusAmount);
-      } else {
-        console.warn(
-          `REFERRAL_BONUS_AMOUNT not set, invalid, or zero in .env for shark/buy route. Using default: ${rewardAmount}. Check .env file.`
-        );
-      }
-
-      const rewardTransaction = new Transaction({
-        phone: user.referrer,
-        type: TransactionType.REFERRAL,
-        amount: rewardAmount,
-        transactionId: generateTransactionId(),
-        description: `Referral reward for ${phone}'s purchase`,
-        status: TransactionStatus.COMPLETED,
-        relatedPhone: phone,
-        metadata: {
-          referralId: user.referrer,
-          transactionId
-        }
-      });
-      await rewardTransaction.save();
-
-      const referral = new Referral({
+      // Check if this referred user has already generated a referral reward
+      const existingReferralReward = await ReferralAmount.findOne({
         referrer: user.referrer,
-        referred: phone,
-        transactionId,
-        reward: rewardAmount,
-        status: TransactionStatus.COMPLETED
+        referred: phone
       });
-      await referral.save();
+      
+      if (!existingReferralReward) {
+        // This is the first shark purchase by this referred user - give reward
+        const rewardAmount = 300; // Fixed ₹300 reward for FIRST shark purchase
+        
+        // Create reward transaction for the referrer
+        const rewardTransactionId = generateTransactionId();
+        const rewardTransaction = new Transaction({
+          phone: user.referrer,
+          type: TransactionType.REFERRAL,
+          amount: rewardAmount,
+          transactionId: rewardTransactionId,
+          description: `Referral reward: ${phone}'s first shark purchase (${shark})`,
+          status: TransactionStatus.COMPLETED,
+          relatedPhone: phone,
+          metadata: {
+            referralId: user.referrer,
+            originalTransactionId: transactionId,
+            sharkPurchased: shark,
+            purchaseAmount: Number(price),
+            isFirstPurchase: true
+          }
+        });
+        await rewardTransaction.save();
+
+        // Create referral amount record in new table
+        const referralAmount = new ReferralAmount({
+          referrer: user.referrer,
+          referred: phone,
+          referralTransactionId: transactionId,
+          rewardAmount: rewardAmount,
+          status: 'completed',
+          dateEarned: new Date(),
+          referredPurchaseAmount: Number(price),
+          rewardTransactionId: rewardTransactionId
+        });
+        await referralAmount.save();
+        
+        console.log(`✅ Referral reward processed: ${user.referrer} earned ₹${rewardAmount} for ${phone}'s FIRST shark purchase (${shark})`);
+      } else {
+        console.log(`ℹ️ No referral reward: ${phone} has already generated a referral reward for ${user.referrer} (first purchase already rewarded)`);
+      }
     }
 
     res.json({

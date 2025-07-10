@@ -216,13 +216,13 @@ const Withdraw = () => {
     }
   };
 
-  if (pageLoading || userLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size={32} />
-      </div>
-    );
-  }
+  // if (pageLoading || userLoading) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <LoadingSpinner size={32} />
+  //     </div>
+  //   );
+  // }
 
   if (!userData?.phone) {
     return (
@@ -239,24 +239,23 @@ const Withdraw = () => {
   return (
     <Layout>
       <div className="px-6 py-6">
-        <Header title="Withdraw" />
+        {/* <Header title="Withdraw" /> */}
         {/* Disclaimer for withdrawal window */}
-        {!limits?.isTimeValid && (
+        {/* {!limits?.isTimeValid && (
           <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
             Withdrawals are currently closed. You can withdraw from <b>8:00 AM</b> to <b>10:00 PM IST</b> (Monday to Friday only).
           </div>
-        )}
+        )} */}
         <div className="mt-6">
           <div className=" rounded-lg p-6 card-shadow">
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Withdrawal Details</h3>
+                <h3 className="text-lg font-semibold te mb-4">Withdrawal Details</h3>
                 <div className="space-y-4">
-                  {limits && (
-                    <>
+                   <>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Minimum Amount</span>
-                        <span className="font-semibold">₹{limits.minimumAmount}</span>
+                        <span className="font-semibold">₹{limits?.minimumAmount || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Tax Rate</span>
@@ -264,10 +263,9 @@ const Withdraw = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Withdrawal Window</span>
-                        <span className="font-semibold">{limits.openTime} - {limits.closeTime}</span>
+                        <span className="font-semibold">{limits?.openTime} - {limits?.closeTime}</span>
                       </div>
                     </>
-                  )}
                 </div>
               </div>
 
@@ -361,7 +359,13 @@ const Withdraw = () => {
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Date</span>
-                            <span className="text-sm">{new Date(item.date).toLocaleDateString()}</span>
+                            <span className="text-sm"> {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Status</span>

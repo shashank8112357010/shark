@@ -7,6 +7,11 @@ export interface UserData {
   balance: number;
   referrer?: string;
   qrCode?: string;
+  // New referral amount fields
+  totalReferralEarnings?: number;
+  totalReferralCount?: number;
+  allTimeReferralEarnings?: number;
+  allTimeReferralCount?: number;
 }
 
 export function useUserData() {

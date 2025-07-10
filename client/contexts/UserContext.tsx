@@ -34,28 +34,43 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Fetch all data in parallel
-      const [balanceRes, referralRes, userRes] = await Promise.all([
+      const [balanceRes, referralAmountRes, userRes] = await Promise.all([
         fetch(`/api/wallet/balance/${user.phone}`),
-        fetch(`/api/referral/count/${user.phone}`),
+        fetch(`/api/referral-amount/stats/${user.phone}`),
         fetch(`/api/auth/user/${user.phone}`)
       ]);
 
-      const [balanceData, referralData, userData] = await Promise.all([
+      const [balanceData, referralAmountData, userData] = await Promise.all([
         balanceRes.json(),
-        referralRes.json(),
+        referralAmountRes.json(),
         userRes.json()
       ]);
 
       // Check for errors
-      if (!balanceRes.ok || !referralRes.ok || !userRes.ok) {
+      if (!balanceRes.ok || !userRes.ok) {
         throw new Error('Failed to fetch user data');
       }
+
+      // Extract referral stats (don't fail if API is not available)
+      const referralStats = referralAmountRes.ok && referralAmountData.success
+        ? {
+            totalReferralEarnings: referralAmountData.totalEarned || 0,
+            totalReferralCount: referralAmountData.totalReferrals || 0,
+            allTimeReferralEarnings: referralAmountData.allTimeEarned || 0,
+            allTimeReferralCount: referralAmountData.allTimeReferrals || 0
+          }
+        : {
+            totalReferralEarnings: 0,
+            totalReferralCount: 0,
+            allTimeReferralEarnings: 0,
+            allTimeReferralCount: 0
+          };
 
       const updatedUserData = {
         ...userData,
         balance: balanceData.balance || 0,
-        referrer: referralData.count || null,
-        qrCode: userData.qrCode || null
+        qrCode: userData.qrCode || null,
+        ...referralStats
       };
 
       setUserData(updatedUserData);

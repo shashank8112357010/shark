@@ -190,11 +190,12 @@ const Invite = () => {
             <div className="mt-2 text-xs text-gray-500 text-center">
               Or share this link/QR with your friends to register
             </div>
-            {(referralBonus !== null && referralBonus > 0) && (
-              <div className="mt-2 text-green-600 text-sm font-semibold">
-                {configLoading ? "Loading bonus info..." : `Earn ₹ 200  for every friend who registers and completes onboarding!`}
-              </div>
-            )}
+            <div className="mt-2 text-green-600 text-sm font-semibold">
+              Earn ₹300 for each referral's FIRST shark purchase!
+            </div>
+            <div className="mt-1 text-xs text-gray-600">
+              One-time reward per referral - only their first shark purchase counts
+            </div>
             {(referralBonus === 0 && !configLoading) && (
                 <div className="mt-2 text-gray-600 text-sm font-semibold">
                     Referral program details are currently unavailable.
