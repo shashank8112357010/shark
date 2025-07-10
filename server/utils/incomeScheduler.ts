@@ -154,6 +154,33 @@ async function calculateDailyIncome() {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Export function to start the scheduler
 export function startIncomeScheduler() {
   // Schedule the task to run daily at 4 AM IST

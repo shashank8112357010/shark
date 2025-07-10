@@ -33,13 +33,13 @@ interface WithdrawalHistory {
   status: 'success' | 'pending' | 'failed';
   tax: number;
   paymentUtr?: string;
+  createdAt ? : string ;
 }
 
 const Withdraw = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { userData, loading: userLoading } = useUser();
-  const userLoadingVar = userLoading; // Move useUser().loading to a variable
   const [amount, setAmount] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -99,10 +99,6 @@ const Withdraw = () => {
       const limitsData = await limitsRes.json();
       const historyData = await historyRes.json();
 
-      console.log(limitsData , "limitsData");
-      console.log(historyData , "historyData");
-      
-
       setLimits({
         ...limitsData,
         openTime: limitsData.timeWindow?.start,
@@ -130,12 +126,6 @@ const Withdraw = () => {
 
 
   useEffect(() => {
-    // if (userLoading) {
-    //   // Still loading user context, keep page loading
-    //   setPageLoading(true);
-    //   return;
-    // }
-    
     if (userData?.phone) {
       // User is logged in, fetch withdrawal data
       fetchWithdrawalDataCallback();

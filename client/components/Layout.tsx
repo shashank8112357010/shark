@@ -17,14 +17,10 @@ const Layout = ({
   hideBottomNav = false,
   className,
 }: LayoutProps) => {
-  const { userData, loading, refreshUserData } = useUser();
-  const user = userData || null;
+  const { userData, loading } = useUser();
   const balance = userData?.balance || 0;
-  const currentReferrals = userData?.referrer || 0;
-  // useEffect(() => {
-  //   refreshUserData();
-  // }, []);
-
+  
+  const currentReferrals = userData?.allTimeReferralCount || 0;
 
   return (
     <div className="mobile-container">

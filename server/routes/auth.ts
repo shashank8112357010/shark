@@ -1,8 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import User from '../models/User';
-import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
-import Referral from '../models/Referral';
 import { connectDb } from '../utils/db';
 import QRCode from 'qrcode';
 

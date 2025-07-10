@@ -51,6 +51,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Failed to fetch user data');
       }
 
+
+      console.warn(referralAmountData.allTimeReferrals , "referralAmountData");
+      
       // Extract referral stats (don't fail if API is not available)
       const referralStats = referralAmountRes.ok && referralAmountData.success
         ? {

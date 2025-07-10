@@ -53,6 +53,5 @@ export function createServer() {
   // Start the income scheduler (runs at 4 AM IST daily)
   startIncomeScheduler();
   console.log('🕐 Income scheduler started - will run daily at 4 AM IST');
-
   return app;
 }

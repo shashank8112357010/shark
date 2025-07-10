@@ -233,7 +233,7 @@ useEffect(() => {
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
               <Download size={20} className="text-shark-blue" />
-              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayRecharge}</span>}
+              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayRecharge - displayIncome }</span>}
             </div>
             <div className="text-gray-600 text-sm text-readable">Recharge</div>
           </div>

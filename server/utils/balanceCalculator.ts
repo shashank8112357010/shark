@@ -14,7 +14,7 @@ export async function calculateUserBalance(phone: string): Promise<number> {
           $switch: {
             branches: [
               { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-              { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
+              // { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
               { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
               { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
             ],

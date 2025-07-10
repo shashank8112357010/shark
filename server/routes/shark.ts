@@ -78,6 +78,7 @@ router.post("/buy", async (req, res) => {
       });
     }
 
+
     // Mark transaction as completed (this will deduct balance in aggregation)
     await Transaction.findOneAndUpdate(
       { transactionId },
@@ -99,7 +100,7 @@ router.post("/buy", async (req, res) => {
 
     // New referral system - only reward for FIRST shark purchase by referred user
     const user = await User.findOne({ phone });
-    if (user?.referrer) {
+    if (user && user.referrer) {
       // Check if this referred user has already generated a referral reward
       const existingReferralReward = await ReferralAmount.findOne({
         referrer: user.referrer,
@@ -112,23 +113,8 @@ router.post("/buy", async (req, res) => {
         
         // Create reward transaction for the referrer
         const rewardTransactionId = generateTransactionId();
-        const rewardTransaction = new Transaction({
-          phone: user.referrer,
-          type: TransactionType.REFERRAL,
-          amount: rewardAmount,
-          transactionId: rewardTransactionId,
-          description: `Referral reward: ${phone}'s first shark purchase (${shark})`,
-          status: TransactionStatus.COMPLETED,
-          relatedPhone: phone,
-          metadata: {
-            referralId: user.referrer,
-            originalTransactionId: transactionId,
-            sharkPurchased: shark,
-            purchaseAmount: Number(price),
-            isFirstPurchase: true
-          }
-        });
-        await rewardTransaction.save();
+
+
 
         // Create referral amount record in new table
         const referralAmount = new ReferralAmount({

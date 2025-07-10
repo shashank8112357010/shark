@@ -91,62 +91,62 @@ router.get("/config", (req, res) => {
   }
 });
 
-// Process referral reward when a transaction occurs
-router.post("/process-reward", async (req, res) => {
-  await connectDb();
-  const { transactionId } = req.body;
-  if (!transactionId) return res.status(400).json({ error: "Transaction ID required" });
+// // Process referral reward when a transaction occurs
+// router.post("/process-reward", async (req, res) => {
+//   await connectDb();
+//   const { transactionId } = req.body;
+//   if (!transactionId) return res.status(400).json({ error: "Transaction ID required" });
 
-  try {
-    // Get the transaction details
-    const transaction = await Transaction?.findOne({ transactionId });
-    if (!transaction || transaction.status !== TransactionStatus.COMPLETED) {
-      return res.status(400).json({ error: "Invalid transaction" });
-    }
+//   try {
+//     // Get the transaction details
+//     const transaction = await Transaction?.findOne({ transactionId });
+//     if (!transaction || transaction.status !== TransactionStatus.COMPLETED) {
+//       return res.status(400).json({ error: "Invalid transaction" });
+//     }
 
-    // Get the user who made the transaction
-    const user = await User.findOne({ phone: transaction.phone });
-    if (!user || !user.referrer) {
-      return res.json({ success: false, message: "No referrer found" });
-    }
+//     // Get the user who made the transaction
+//     const user = await User.findOne({ phone: transaction.phone });
+//     if (!user || !user.referrer) {
+//       return res.json({ success: false, message: "No referrer found" });
+//     }
 
-    // Calculate referral reward
-    const rewardAmount = calculateReferralReward(transaction.amount);
+//     // Calculate referral reward
+//     const rewardAmount = calculateReferralReward(transaction.amount);
 
-    // Create referral record
-    const referral = new Referral({
-      referrer: user.referrer,
-      referred: transaction.phone,
-      transactionId,
-      reward: rewardAmount,
-      status: TransactionStatus.COMPLETED
-    });
-    await referral.save();
+//     // Create referral record
+//     const referral = new Referral({
+//       referrer: user.referrer,
+//       referred: transaction.phone,
+//       transactionId,
+//       reward: rewardAmount,
+//       status: TransactionStatus.COMPLETED
+//     });
+//     await referral.save();
 
-    // Create reward transaction
-    const rewardTransaction = new Transaction({
-      phone: user.referrer,
-      type: TransactionType.REFERRAL,
-      amount: rewardAmount,
-      transactionId: generateTransactionId(),
-      description: `Referral reward for ${transaction.phone}'s purchase`,
-      status: TransactionStatus.COMPLETED,
-      relatedPhone: transaction.phone,
-      metadata: { 
-        referralId: referral._id,
-        transactionId: transaction.transactionId
-      }
-    });
-    await rewardTransaction.save();
+//     // Create reward transaction
+//     const rewardTransaction = new Transaction({
+//       phone: user.referrer,
+//       type: TransactionType.REFERRAL,
+//       amount: rewardAmount,
+//       transactionId: generateTransactionId(),
+//       description: `Referral reward for ${transaction.phone}'s purchase`,
+//       status: TransactionStatus.COMPLETED,
+//       relatedPhone: transaction.phone,
+//       metadata: { 
+//         referralId: referral._id,
+//         transactionId: transaction.transactionId
+//       }
+//     });
+//     await rewardTransaction.save();
 
-    res.json({ 
-      success: true, 
-      referral,
-      rewardTransaction
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to process referral reward" });
-  }
-});
+//     res.json({ 
+//       success: true, 
+//       referral,
+//       rewardTransaction
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: "Failed to process referral reward" });
+//   }
+// });
 
 export default router;
