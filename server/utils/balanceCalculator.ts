@@ -5,7 +5,7 @@ import Transaction, { TransactionType, TransactionStatus } from '../models/Trans
  * Only counts completed transactions to ensure accurate balance
  */
 export async function calculateUserBalance(phone: string): Promise<number> {
-  // Sum all non-recharge DEPOSITs
+  // Sum all non-recharge DEPOSITs (referral earnings, daily income, etc.)
   const nonRechargeDeposits = await Transaction.aggregate([
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.DEPOSIT,
       $or: [
@@ -19,14 +19,14 @@ export async function calculateUserBalance(phone: string): Promise<number> {
   ]);
   const totalNonRechargeDeposits = nonRechargeDeposits[0]?.total || 0;
 
-  // Sum all PURCHASEs' fromBalance (from metadata)
+  // Sum all PURCHASEs' fromBalance (from metadata) - this is what was deducted from non-recharge balance
   const purchases = await Transaction.aggregate([
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.PURCHASE, 'metadata.fromBalance': { $exists: true } } },
     { $group: { _id: null, total: { $sum: "$metadata.fromBalance" } } }
   ]);
   const totalFromBalance = purchases[0]?.total || 0;
 
-  // Subtract withdrawals as before
+  // Subtract withdrawals
   const withdrawals = await Transaction.aggregate([
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.WITHDRAWAL } },
     { $group: { _id: null, total: { $sum: "$amount" } } }
@@ -59,7 +59,7 @@ export async function calculateAvailableRecharge(phone: string): Promise<number>
   ]);
   const totalRecharge = rechargeDeposits[0]?.total || 0;
 
-  // Sum all PURCHASEs' fromRecharge (from metadata)
+  // Sum all PURCHASEs' fromRecharge (from metadata) - this is what was deducted from recharge
   const purchases = await Transaction.aggregate([
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.PURCHASE, 'metadata.fromRecharge': { $exists: true } } },
     { $group: { _id: null, total: { $sum: "$metadata.fromRecharge" } } }
@@ -77,4 +77,15 @@ export async function calculateAvailableNonRechargeBalance(phone: string): Promi
   const totalBalance = await calculateUserBalance(phone);
   // This is already excluding recharge, so just return it
   return totalBalance;
+}
+
+/**
+ * Calculate total balance (recharge + non-recharge) for display purposes
+ * Since shark purchases only use recharge, we should only show recharge balance
+ */
+export async function calculateTotalBalance(phone: string): Promise<number> {
+  // Since shark purchases only use recharge balance, we should only show recharge balance
+  // Non-recharge balance (referral, daily income) should be kept separate
+  const rechargeBalance = await calculateAvailableRecharge(phone);
+  return rechargeBalance;
 }

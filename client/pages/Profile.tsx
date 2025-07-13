@@ -63,7 +63,7 @@ const Profile = () => {
           throw new Error(errorData.error || "Failed to fetch profile statistics");
         }
         const statsData = await statsResponse.json();
-        setTotalRecharge(statsData.totalRecharge || 0);
+        setTotalRecharge(statsData.availableRecharge || 0); // Use availableRecharge instead of totalRecharge
         // Use the new totalDailyIncome field from wallet stats
         const walletDailyIncome = statsData.totalDailyIncome || 0;
         

@@ -59,37 +59,27 @@ router.post("/buy", async (req, res) => {
     transaction.qrCode = qrCode;
     await transaction.save();
 
-    // Calculate available recharge and non-recharge balance
+    // Calculate available recharge balance only
     const availableRecharge = await calculateAvailableRecharge(phone);
-    const availableBalance = await calculateAvailableNonRechargeBalance(phone);
-    const totalAvailable = availableRecharge + availableBalance;
-
-    if (totalAvailable < Number(price)) {
+    // Only allow purchase if recharge balance is sufficient
+    if (availableRecharge < Number(price)) {
       await Transaction.findOneAndUpdate(
         { transactionId },
         {
           status: TransactionStatus.FAILED,
-          description: `Insufficient funds. Recharge: ₹${availableRecharge}, Balance: ₹${availableBalance}, Required: ₹${price}`
+          description: `Insufficient recharge balance. Recharge: ₹${availableRecharge}, Required: ₹${price}`
         }
       );
       return res.status(400).json({
-        error: "Insufficient balance",
+        error: "Insufficient recharge balance. Please recharge to buy this shark.",
         availableRecharge,
-        availableBalance,
         requiredAmount: Number(price)
       });
     }
 
-    // Deduct from recharge first, then balance
-    let fromRecharge = 0;
+    // Deduct from recharge only
+    let fromRecharge = Number(price);
     let fromBalance = 0;
-    if (availableRecharge >= Number(price)) {
-      fromRecharge = Number(price);
-      fromBalance = 0;
-    } else {
-      fromRecharge = availableRecharge;
-      fromBalance = Number(price) - availableRecharge;
-    }
 
     // Mark transaction as completed and record deduction sources
     await Transaction.findOneAndUpdate(

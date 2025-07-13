@@ -2,7 +2,7 @@ import { Router } from "express";
 import Transaction, { TransactionType } from '../models/Transaction'; // Import Transaction model and type
 import RechargeRequest from '../models/RechargeRequest';
 import { connectDb } from '../utils/db';
-import { calculateUserBalance, checkSufficientBalance } from '../utils/balanceCalculator';
+import { calculateUserBalance, checkSufficientBalance, calculateAvailableRecharge } from '../utils/balanceCalculator';
 
 const router = Router();
 
@@ -12,8 +12,8 @@ router.get("/balance/:phone", async (req, res) => {
     await connectDb();
     const phone = req.params.phone;
     
-    // Calculate balance using consistent utility function
-    const balance = await calculateUserBalance(phone);
+    // Calculate total balance (recharge + non-recharge) for display
+    const balance = await calculateAvailableRecharge(phone);
     res.json({ balance });
   } catch (error: any) {
     console.error('Error calculating balance:', error);
@@ -238,7 +238,14 @@ router.get("/stats/:phone", async (req, res) => {
     if (stats.length > 0) {
       // Remove the _id field from the response as it's just the phone number
       const { _id, ...resultStats } = stats[0];
-      res.json(resultStats);
+      
+      // Calculate available recharge (total recharge minus what was used in purchases)
+      const availableRecharge = await calculateAvailableRecharge(userPhone);
+      
+      res.json({
+        ...resultStats,
+        availableRecharge: availableRecharge // Add available recharge balance
+      });
     } else {
       // No transactions found, return zero stats
       res.json({
@@ -247,6 +254,7 @@ router.get("/stats/:phone", async (req, res) => {
         totalWithdrawals: 0,
         totalSpentOnPlans: 0,
         totalReferralEarnings: 0,
+        availableRecharge: 0,
       });
     }
   } catch (error: any) {
