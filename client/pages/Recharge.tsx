@@ -206,6 +206,8 @@ const Recharge = () => {
                   className="mx-auto" 
                 />
                 <p className="text-center text-sm text-gray-500 mt-2">Scan to pay ₹{amount}</p>
+                <p className="text-center text-sm text-gray-500 mt-2">UPI : paytm.s1mhm4a@pty</p>
+
               </div>
             </div>
 
@@ -225,6 +227,7 @@ const Recharge = () => {
                 <li>2. Scan the QR code above</li>
                 <li>3. Verify the amount ₹{amount}</li>
                 <li>4. Complete the payment</li>
+                
                 <li>5. Note down the UTR/Transaction ID</li>
               </ol>
             </div>

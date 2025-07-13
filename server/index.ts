@@ -10,7 +10,6 @@ import referralAmountRouter from "./routes/referralAmount";
 import withdrawRouter from "./routes/withdraw";
 import adminRouter from "./routes/admin";
 import incomeRouter from "./routes/income";
-import { startIncomeScheduler } from "./utils/incomeScheduler";
 
 export function createServer() {
   const app = express();
@@ -50,8 +49,5 @@ export function createServer() {
   // Add admin routes
   app.use("/api/admin", adminRouter);
 
-  // Start the income scheduler (runs at 4 AM IST daily)
-  startIncomeScheduler();
-  console.log('🕐 Income scheduler started - will run daily at 4 AM IST');
   return app;
 }

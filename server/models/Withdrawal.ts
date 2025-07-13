@@ -45,7 +45,23 @@ const withdrawalSchema = new mongoose.Schema({
   },
   upiId: {
     type: String,
-    required: true,
+    required: false,
+  },
+  bankAccount: {
+    type: String,
+    required: false,
+  },
+  ifsc: {
+    type: String,
+    required: false,
+  },
+  accountHolder: {
+    type: String,
+    required: false,
+  },
+  qrImage: {
+    type: String,
+    required: false,
   },
   createdAt: {
     type: Date,

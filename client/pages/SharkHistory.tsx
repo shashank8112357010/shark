@@ -86,7 +86,7 @@ const SharkHistory = () => {
     return (
       <Layout>
         <div className="px-6 py-6">
-          <Header title="Shark History" />
+          
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
             <h2 className="text-xl font-semibold text-red-500 mb-2">
               Failed to Load Shark History
@@ -107,7 +107,7 @@ const SharkHistory = () => {
   return (
     <Layout className="scroll-smooth no-overscroll">
       <div className="px-6 py-6">
-        <Header title="Shark History" />
+      
         
         {/* Summary Stats */}
         <div className="mt-6 grid grid-cols-2 gap-4">

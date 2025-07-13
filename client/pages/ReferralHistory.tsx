@@ -148,16 +148,9 @@ const ReferralHistory = () => {
       setTotalRewards(rewardsData.totalReward || 0);
 
       // Fetch referral withdrawals (filtered from all withdrawals)
-      const withdrawalsRes = await fetch(`/api/withdrawals/${userData.phone}/history`);
+      const withdrawalsRes = await fetch(`/api/wallet/transactions?type=deposit&source=referral_withdrawal&phone=${userData.phone}`);
       const withdrawalsData = await withdrawalsRes.json();
-      
-      // Filter withdrawals that are referral-related
-      const referralWithdrawals = (withdrawalsData.history || []).filter((withdrawal: any) => 
-        withdrawal.transactionId?.type === 'referral' || 
-        (withdrawal.amount <= 1000 && withdrawal.transactionId?.description?.toLowerCase().includes('referral'))
-      );
-      
-      setReferralWithdrawals(referralWithdrawals);
+      setReferralWithdrawals(withdrawalsData.transactions || []);
     } catch (error) {
       console.error('Failed to fetch referral data:', error);
     } finally {

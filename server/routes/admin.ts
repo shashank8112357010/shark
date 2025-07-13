@@ -20,13 +20,13 @@ const authenticateAdmin = async (req: any, res: any, next: any) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const admin = await Admin.findById(decoded.adminId);
+    const admin = await (Admin as any).findById(decoded.adminId);
     
     if (!admin || !admin.isActive) {
       return res.status(401).json({ success: false, error: 'Invalid token or admin not active.' });
     }
 
-    req.admin = admin;
+    (req as any).admin = admin;
     next();
   } catch (error) {
     res.status(401).json({ success: false, error: 'Invalid token.' });
@@ -43,7 +43,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email and password are required' });
     }
 
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    const admin = await (Admin as any).findOne({ email: email.toLowerCase() });
     if (!admin) {
       return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
@@ -84,45 +84,58 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
   try {
     await connectDb();
 
-    const totalUsers = await User.countDocuments();
-    const totalRechargeRequests = await RechargeRequest.countDocuments();
-    const pendingRecharges = await RechargeRequest.countDocuments({ status: 'pending' });
-    const approvedRecharges = await RechargeRequest.countDocuments({ status: 'approved' });
-    const rejectedRecharges = await RechargeRequest.countDocuments({ status: 'rejected' });
+    const totalUsers = await (User as any).countDocuments();
+    const totalRechargeRequests = await (RechargeRequest as any).countDocuments();
+    const pendingRecharges = await (RechargeRequest as any).countDocuments({ status: 'pending' });
+    const approvedRecharges = await (RechargeRequest as any).countDocuments({ status: 'approved' });
+    const rejectedRecharges = await (RechargeRequest as any).countDocuments({ status: 'rejected' });
     
-    const totalWithdrawals = await Withdrawal.countDocuments();
-    const pendingWithdrawals = await Withdrawal.countDocuments({ status: 'PENDING' });
-    const approvedWithdrawals = await Withdrawal.countDocuments({ status: 'APPROVED' });
-    const completedWithdrawals = await Withdrawal.countDocuments({ status: 'COMPLETED' });
+    const totalWithdrawals = await (Withdrawal as any).countDocuments();
+    const pendingWithdrawals = await (Withdrawal as any).countDocuments({ status: 'PENDING' });
+    const approvedWithdrawals = await (Withdrawal as any).countDocuments({ status: 'APPROVED' });
+    const completedWithdrawals = await (Withdrawal as any).countDocuments({ status: 'COMPLETED' });
 
     // Calculate total wallet balances using Transaction aggregation
     let walletStats;
     try {
-      walletStats = await Transaction.aggregate([
-        { $match: { status: { $ne: 'failed' } } },
-        {
-          $group: {
-            _id: null,
-            totalBalance: { $sum: '$balance' },
-            avgBalance: { $avg: '$balance' },
-            minBalance: { $min: '$balance' },
-            maxBalance: { $max: '$balance' },
-            totalWallets: { $sum: 1 }
-          }
-        }
+      const [rechargeStats, withdrawalStats, referralStats] = await Promise.all([
+        (Transaction as any).aggregate([
+          { $match: { type: TransactionType.DEPOSIT, 'metadata.source': 'recharge', status: TransactionStatus.COMPLETED } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        (Transaction as any).aggregate([
+          { $match: { type: TransactionType.WITHDRAWAL, status: TransactionStatus.COMPLETED } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        (Transaction as any).aggregate([
+          { $match: { type: TransactionType.REFERRAL, status: TransactionStatus.COMPLETED } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ])
       ]);
+
+      const totalRecharge = rechargeStats[0]?.total || 0;
+      const totalWithdrawal = withdrawalStats[0]?.total || 0;
+      const totalReferral = referralStats[0]?.total || 0;
+      const profit = totalRecharge - totalWithdrawal - totalReferral;
+
+      walletStats = [{
+        totalRecharge,
+        totalWithdrawal,
+        totalReferral,
+        profit
+      }];
     } catch (transactionError) {
       console.warn('Transaction aggregation failed:', transactionError);
       walletStats = [];
     }
 
     // Get recent activity
-    const recentRecharges = await RechargeRequest.find()
+    const recentRecharges = await (RechargeRequest as any).find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('phone amount utrNumber status createdAt');
 
-    const recentWithdrawals = await Withdrawal.find()
+    const recentWithdrawals = await (Withdrawal as any).find()
       .sort({ createdAt: -1 })
       .limit(5)
       .select('phone amount status createdAt');
@@ -145,13 +158,7 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
           approved: approvedWithdrawals,
           completed: completedWithdrawals
         },
-        wallets: walletStats[0] || {
-          totalBalance: 0,
-          avgBalance: 0,
-          minBalance: 0,
-          maxBalance: 0,
-          totalWallets: 0
-        },
+        wallets: walletStats[0],
         recent: {
           recharges: recentRecharges,
           withdrawals: recentWithdrawals
@@ -177,12 +184,12 @@ router.get('/recharge-requests', authenticateAdmin, async (req, res) => {
       filter.status = status;
     }
 
-    const rechargeRequests = await RechargeRequest.find(filter)
+    const rechargeRequests = await (RechargeRequest as any).find(filter)
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
 
-    const total = await RechargeRequest.countDocuments(filter);
+    const total = await (RechargeRequest as any).countDocuments(filter);
 
     res.json({
       success: true,
@@ -206,7 +213,7 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
     await connectDb();
     const { id } = req.params;
     const { status, adminNotes, approvedAmount } = req.body;
-    const admin = req.admin;
+    const admin = (req as any).admin;
 
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ success: false, error: 'Invalid status' });
@@ -216,7 +223,7 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
       return res.status(400).json({ success: false, error: 'Valid approved amount is required for approval' });
     }
 
-    const rechargeRequest = await RechargeRequest.findById(id);
+    const rechargeRequest = await (RechargeRequest as any).findById(id);
     if (!rechargeRequest) {
       return res.status(404).json({ success: false, error: 'Recharge request not found' });
     }
@@ -245,7 +252,7 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
 
       // Generate a unique transactionId (e.g., using timestamp and random string)
       const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-      const transaction = new Transaction({
+      const transaction = new (Transaction as any)({
         phone: rechargeRequest.phone,
         type: 'deposit', // lowercase to match enum
         amount: amountToAdd,
@@ -285,12 +292,13 @@ router.get('/withdrawals', authenticateAdmin, async (req, res) => {
       filter.status = status;
     }
 
-    const withdrawals = await Withdrawal.find(filter)
+    const withdrawals = await (Withdrawal as any).find(filter)
       .sort({ createdAt: -1 })
       .limit(limit)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .select('phone amount tax netAmount status adminNotes reviewedBy reviewedAt paymentUtr upiId bankAccount ifsc accountHolder qrImage createdAt updatedAt');
 
-    const total = await Withdrawal.countDocuments(filter);
+    const total = await (Withdrawal as any).countDocuments(filter);
 
     res.json({
       success: true,
@@ -314,13 +322,13 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
     await connectDb();
     const { id } = req.params;
     const {  paymentUtr, adminNotes } = req.body;
-    const admin = req.admin;
+    const admin = (req as any).admin;
 
     if (!paymentUtr) {
       return res.status(400).json({ success: false, error: 'Payment UTR is required' });
     }
 
-    const withdrawal = await Withdrawal.findById(id);
+    const withdrawal = await (Withdrawal as any).findById(id);
     if (!withdrawal) {
       return res.status(404).json({ success: false, error: 'Withdrawal not found' });
     }
@@ -339,7 +347,7 @@ router.post('/withdrawals/:id/approve', authenticateAdmin, async (req, res) => {
     await withdrawal.save();
     
     // Update the associated transaction status to completed
-    const originalTransaction = await Transaction.findById(withdrawal.transactionId);
+    const originalTransaction = await (Transaction as any).findById(withdrawal.transactionId);
     if (originalTransaction) {
       originalTransaction.status = TransactionStatus.COMPLETED;
       await originalTransaction.save();
@@ -362,9 +370,9 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
     await connectDb();
     const { id } = req.params;
     const { adminNotes } = req.body;
-    const admin = req.admin;
+    const admin = (req as any).admin;
 
-    const withdrawal = await Withdrawal.findById(id);
+    const withdrawal = await (Withdrawal as any).findById(id);
     if (!withdrawal) {
       return res.status(404).json({ success: false, error: 'Withdrawal not found' });
     }
@@ -384,7 +392,7 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
     
     // Create refund transaction
     const refundTransactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const refundTransaction = new Transaction({
+    const refundTransaction = new (Transaction as any)({
       phone: withdrawal.phone,
       type: TransactionType.DEPOSIT,
       amount: withdrawal.amount,
@@ -395,7 +403,7 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
     await refundTransaction.save();
     
     // Also update the original withdrawal transaction status
-    const originalTransaction = await Transaction.findById(withdrawal.transactionId);
+    const originalTransaction = await (Transaction as any).findById(withdrawal.transactionId);
     if (originalTransaction) {
       originalTransaction.status = TransactionStatus.FAILED;
       await originalTransaction.save();
@@ -419,20 +427,20 @@ router.get('/users', authenticateAdmin, async (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const users = await User.find()
+    const users = await (User as any).find()
       .select('-password -withdrawalPassword')
       .sort({ created: -1 })
       .limit(limit)
       .skip((page - 1) * limit);
 
-    const total = await User.countDocuments();
+    const total = await (User as any).countDocuments();
 
     // Get wallet balances for each user using transaction aggregation
     
     const usersWithWallets = await Promise.all(
       users.map(async (user) => {
         // Calculate balance using Transaction aggregation
-        const balanceResult = await Transaction.aggregate([
+        const balanceResult = await (Transaction as any).aggregate([
           { $match: { phone: user.phone, status: { $ne: 'failed' } } },
           { $group: {
             _id: null,
@@ -498,7 +506,7 @@ router.get('/sharks', authenticateAdmin, async (req, res) => {
     await connectDb();
     
     
-    const sharks = await SharkModel.find().sort({ levelNumber: 1, price: 1 });
+    const sharks = await (SharkModel as any).find().sort({ levelNumber: 1, price: 1 });
     
     // Group by levels
     const levelMap = new Map();
@@ -515,7 +523,7 @@ router.get('/sharks', authenticateAdmin, async (req, res) => {
         totalReturn: shark.totalReturn,
         dailyIncome: shark.dailyIncome,
         durationDays: shark.durationDays,
-        isLocked: shark.isLocked || false,
+        isLocked: shark.isLocked,
         levelNumber: shark.levelNumber
       });
     });
@@ -541,14 +549,14 @@ router.patch('/sharks/:id/lock-status', authenticateAdmin, async (req, res) => {
     await connectDb();
     const { id } = req.params;
     const { isLocked } = req.body;
-    const admin = req.admin;
+    const admin = (req as any).admin;
     
     if (typeof isLocked !== 'boolean') {
       return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
     }
     
     
-    const shark = await SharkModel.findById(id);
+    const shark = await (SharkModel as any).findById(id);
     
     if (!shark) {
       return res.status(404).json({ success: false, error: 'Shark not found' });
@@ -581,16 +589,16 @@ router.patch('/sharks/level/:levelNumber/lock-status', authenticateAdmin, async 
     await connectDb();
     const { levelNumber } = req.params;
     const { isLocked } = req.body;
-    const admin = req.admin;
+    const admin = (req as any).admin;
     
     if (typeof isLocked !== 'boolean') {
       return res.status(400).json({ success: false, error: 'isLocked must be a boolean' });
     }
     
     
-    const result = await SharkModel.updateMany(
+    const result = await (SharkModel as any).updateMany(
       { levelNumber: parseInt(levelNumber) },
-      { isLocked: isLocked }
+      { $set: { isLocked: isLocked } }
     );
     
     console.log(`Admin ${admin.email} ${isLocked ? 'locked' : 'unlocked'} all sharks in level ${levelNumber}`);

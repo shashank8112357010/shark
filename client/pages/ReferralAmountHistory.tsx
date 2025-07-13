@@ -146,7 +146,7 @@ const ReferralAmountHistory = () => {
   return (
     <Layout className="scroll-smooth no-overscroll">
       <div className="px-6 py-6">
-        <Header title="Referral Earnings History" />
+    
         
         {/* Summary Stats */}
         <div className="mt-6 grid grid-cols-2 gap-4">
@@ -295,7 +295,7 @@ const ReferralAmountHistory = () => {
         <div className="mt-8 bg-blue-50 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">How Referral Earnings Work</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-                            <li>• Earn ₹500 for each referral's FIRST shark purchase only</li>
+                            <li>• Earn ₹300 for each referral's FIRST shark purchase only</li>
             <li>• One-time reward per referral - subsequent purchases don't earn rewards</li>
             <li>• No reward for just registration - only for shark purchases</li>
             <li>• Minimum transfer: ₹1000</li>

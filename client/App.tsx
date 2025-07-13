@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRechargeRequests from "./pages/AdminRechargeRequests";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminManageSharks from "./pages/AdminManageSharks";
+import IncomeHistory from "./pages/IncomeHistory";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/history" element={<HistoryPage />} /> {/* Add History page route */}
           <Route path="/shark-history" element={<SharkHistory />} /> {/* Add Shark History page route */}
           <Route path="/referral-history" element={<ReferralAmountHistory />} /> {/* Add Referral Amount History page route */}
+          <Route path="/income-history" element={<IncomeHistory />} />
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

@@ -67,16 +67,8 @@ const Profile = () => {
         // Use the new totalDailyIncome field from wallet stats
         const walletDailyIncome = statsData.totalDailyIncome || 0;
         
-        console.log('📊 Wallet Stats:', {
-          totalRecharge: statsData.totalRecharge,
-          totalDailyIncome: statsData.totalDailyIncome,
-          totalWithdrawals: statsData.totalWithdrawals,
-          totalSpentOnPlans: statsData.totalSpentOnPlans
-        });
-
         // Use wallet stats for daily income (more accurate)
         setTotalIncome(walletDailyIncome);
-        console.log(`📊 Total daily income from wallet stats: ₹${walletDailyIncome}`);
 
         // Fetch referral stats for availableReferralEarnings
         const referralStatsResponse = await fetch(`/api/referral-amount/stats/${userData.phone}`);
@@ -184,6 +176,12 @@ const Profile = () => {
       label: "Referral History",
       path: "/referral-history",
       isActive: location.pathname === "/referral-history",
+    },
+    {
+      icon: TrendingUp,
+      label: "Income History",
+      path: "/income-history",
+      isActive: location.pathname === "/income-history",
     }
   ];
 
@@ -197,16 +195,6 @@ const Profile = () => {
   const inviteCode = userData?.inviteCode;
   const inviteLink = `${window.location.origin}/register?invite_code=${inviteCode}`;
 
-  // Fetch referrals
-  const [referrals, setReferrals] = useState([]);
-useEffect(() => {
-    if (inviteCode) {
-      fetch(`/api/referrals?referrer=${inviteCode}`)
-        .then(res => res.json())
-        .then(data => setReferrals(data.referred || []))
-        .catch(() => setReferrals([]));
-    }
-  }, [inviteCode]);
 
   // Display values with proper formatting
   const displayBalance = userData?.balance?.toFixed(2) || "0.00"; // Current wallet balance (includes all transactions)
@@ -305,7 +293,7 @@ useEffect(() => {
           </div>
           
           <div className="mt-3 text-xs text-gray-500">
-            Earn ₹500 for each referral's FIRST shark purchase only!
+            Earn ₹300 for each referral's FIRST shark purchase only!
           </div>
         </div>
       </div>

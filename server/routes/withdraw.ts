@@ -89,7 +89,7 @@ router.get("/:phone/limits", async (req, res) => {
 router.post("/request", async (req, res) => {
   await connectDb();
   try {
-    const { phone, amount, password, upiId } = req.body;
+    const { phone, amount, password, upiId, bankAccount, ifsc, accountHolder, qrImage } = req.body;
 
     // TEMPORARY: Allow withdrawals at any time for testing
     // if (!isWithdrawalTimeValid()) {
@@ -115,9 +115,27 @@ router.post("/request", async (req, res) => {
       return res.status(401).json({ error: "Invalid withdrawal password" });
     }
 
-    // Validate UPI ID
-    if (!upiId || typeof upiId !== 'string' || upiId.length < 5) {
-      return res.status(400).json({ error: 'Valid UPI ID is required' });
+    // Validate payout info: at least one must be provided
+    if (!upiId && (!bankAccount || !ifsc || !accountHolder) && !qrImage) {
+      return res.status(400).json({ error: 'Please provide at least one payout method: UPI ID, Bank Details, or QR Image' });
+    }
+    // If provided, validate UPI ID
+    if (upiId && (typeof upiId !== 'string' || upiId.length < 5)) {
+      return res.status(400).json({ error: 'If provided, UPI ID must be valid' });
+    }
+    // If provided, validate bank details
+    if (bankAccount && typeof bankAccount !== 'string') {
+      return res.status(400).json({ error: 'If provided, Bank Account must be a string' });
+    }
+    if (ifsc && typeof ifsc !== 'string') {
+      return res.status(400).json({ error: 'If provided, IFSC must be a string' });
+    }
+    if (accountHolder && typeof accountHolder !== 'string') {
+      return res.status(400).json({ error: 'If provided, Account Holder must be a string' });
+    }
+    // If provided, validate QR image
+    if (qrImage && typeof qrImage !== 'string') {
+      return res.status(400).json({ error: 'If provided, QR Image must be a string (URL)' });
     }
 
     // Check wallet balance using Transaction aggregation
@@ -154,6 +172,12 @@ router.post("/request", async (req, res) => {
       return res.status(400).json({ error: "Insufficient balance" });
     }
 
+    // Build payout description for transaction
+    let payoutDesc = [];
+    if (upiId) payoutDesc.push(`UPI: ${upiId}`);
+    if (bankAccount && ifsc && accountHolder) payoutDesc.push(`Bank: ${bankAccount}, ${ifsc}, ${accountHolder}`);
+    if (qrImage) payoutDesc.push(`QR Image`);
+
     // Create withdrawal transaction with unique transactionId
     const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const transaction = new Transaction({
@@ -162,7 +186,7 @@ router.post("/request", async (req, res) => {
       amount,
       status: TransactionStatus.COMPLETED, // Set status to completed for immediate balance deduction
       transactionId,
-      description: `Withdrawal request to UPI: ${upiId}`
+      description: `Withdrawal request to ${payoutDesc.join(' | ')}`
     });
     await transaction.save();
 
@@ -179,8 +203,11 @@ router.post("/request", async (req, res) => {
       tax,
       netAmount,
       transactionId: transaction._id,
-
-      upiId
+      upiId,
+      bankAccount,
+      ifsc,
+      accountHolder,
+      qrImage
     });
     await withdrawal.save();
 

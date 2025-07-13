@@ -11,7 +11,7 @@ router.get('/api/referrals', async (req, res) => {
   await connectDb();
   const { referrer } = req.query;
   if (!referrer) return res.status(400).json({ error: 'Missing referrer code' });
-  const referredUsers = await User.find({ referrer }).select('phone created');
+  const referredUsers = await (User as any).find({ referrer }).select('phone created');
   res.json({ referred: referredUsers });
 });
 

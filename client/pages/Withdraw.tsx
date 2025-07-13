@@ -48,6 +48,11 @@ const Withdraw = () => {
   const [limits, setLimits] = useState<WithdrawalLimits | null>(null);
   const [history, setHistory] = useState<WithdrawalHistory[]>([]);
   const [upiId, setUpiId] = useState("");
+  const [bankAccount, setBankAccount] = useState("");
+  const [ifsc, setIfsc] = useState("");
+  const [accountHolder, setAccountHolder] = useState("");
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [qrPreview, setQrPreview] = useState<string>("");
 
   // Using useCallback for fetchWithdrawalData in case it's needed by other parts, though primarily for useEffect here.
   const fetchWithdrawalDataCallback = useCallback(async () => {
@@ -147,8 +152,8 @@ const Withdraw = () => {
         throw new Error("Please enter a valid positive amount");
       }
 
-      if (!upiId || upiId.length < 5) {
-        throw new Error("Please enter a valid UPI ID");
+      if (!upiId && (!bankAccount || !ifsc || !accountHolder) && !qrFile) {
+        throw new Error("Please provide at least one payout method: UPI ID, Bank Details, or QR Image");
       }
 
       if (!password) {
@@ -171,6 +176,21 @@ const Withdraw = () => {
         throw new Error(`You can withdraw up to ₹${limits.remainingLimit} today`);
       }
 
+      let qrImageUrl = "";
+      if (qrFile) {
+        const formData = new FormData();
+        formData.append("file", qrFile);
+        const uploadRes = await fetch("/api/upload/qr", {
+          method: "POST",
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.url) {
+          throw new Error("Failed to upload QR image");
+        }
+        qrImageUrl = uploadData.url;
+      }
+
       const res = await fetch('/api/withdraw/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +198,11 @@ const Withdraw = () => {
           phone: userData.phone,
           amount: amountNum,
           password,
-          upiId
+          upiId,
+          bankAccount,
+          ifsc,
+          accountHolder,
+          qrImage: qrImageUrl
         })
       });
 
@@ -193,6 +217,12 @@ const Withdraw = () => {
       });
       setAmount("");
       setPassword("");
+      setUpiId("");
+      setBankAccount("");
+      setIfsc("");
+      setAccountHolder("");
+      setQrFile(null);
+      setQrPreview("");
       // Don't clear UPI ID as it should be saved for next time
       await fetchWithdrawalDataCallback();
     } catch (err: any) {
@@ -231,11 +261,11 @@ const Withdraw = () => {
       <div className="px-6 py-6">
         {/* <Header title="Withdraw" /> */}
         {/* Disclaimer for withdrawal window */}
-        {/* {!limits?.isTimeValid && (
-          <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded">
+        {!limits?.isTimeValid && (
+          <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded animate-pulse">
             Withdrawals are currently closed. You can withdraw from <b>8:00 AM</b> to <b>10:00 PM IST</b> (Monday to Friday only).
           </div>
-        )} */}
+        )}
         <div className="mt-6">
           <div className=" rounded-lg p-6 card-shadow">
             <div className="space-y-6">
@@ -293,6 +323,59 @@ const Withdraw = () => {
                       disabled={submitLoading}
                     />
                     <p className="text-xs text-gray-500 mt-1">Your UPI ID will be saved for future withdrawals</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Bank Account Number</label>
+                    <Input
+                      type="text"
+                      value={bankAccount}
+                      onChange={e => setBankAccount(e.target.value)}
+                      placeholder="Enter your bank account number"
+                      disabled={submitLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">IFSC Code</label>
+                    <Input
+                      type="text"
+                      value={ifsc}
+                      onChange={e => setIfsc(e.target.value)}
+                      placeholder="Enter IFSC code"
+                      disabled={submitLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Account Holder Name</label>
+                    <Input
+                      type="text"
+                      value={accountHolder}
+                      onChange={e => setAccountHolder(e.target.value)}
+                      placeholder="Enter account holder name"
+                      disabled={submitLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">QR Code Image</label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0] || null;
+                        setQrFile(file);
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setQrPreview(reader.result as string);
+                          reader.readAsDataURL(file);
+                        } else {
+                          setQrPreview("");
+                        }
+                      }}
+                      disabled={submitLoading}
+                    />
+                    {qrPreview && (
+                      <img src={qrPreview} alt="QR Preview" className="mt-2 w-32 h-32 object-contain border rounded" />
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">Upload your QR code image for payout (optional)</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Password</label>

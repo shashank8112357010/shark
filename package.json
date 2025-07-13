@@ -16,10 +16,13 @@
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
     "start": "node dist/server/node-build.mjs",
+    "start:scheduler": "node server/scripts/schedule_income.mjs",
     "test": "vitest --run",
     "create-admin": "tsx server/scripts/createAdmin.ts",
     "add-sharks": "tsx scripts/addSharkData.js",
     "calculate-income": "tsx server/scripts/calculateDailyIncome.ts",
+    "audit-balances": "tsx server/scripts/auditBalances.ts",
+    "remove-fake-users": "tsx server/scripts/removeFakeUsers.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },

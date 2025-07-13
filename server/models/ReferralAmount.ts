@@ -17,7 +17,7 @@ const ReferralAmountSchema = new Schema<IReferralAmount>({
   referrer: { type: String, required: true },
   referred: { type: String, required: true },
   referralTransactionId: { type: String, required: true },
-  rewardAmount: { type: Number, required: true, default: 500 },
+  rewardAmount: { type: Number, required: true, default: 300 },
   status: { 
     type: String, 
     enum: ['pending', 'completed', 'failed', 'withdrawn'], 

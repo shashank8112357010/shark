@@ -8,6 +8,7 @@ export interface IShark extends Document {
   dailyIncome: number; // Renamed from 'daily' for clarity
   durationDays: number; // Renamed from 'endDay' for clarity
   levelNumber: number; // To associate with a level
+  isLocked: boolean;
   // Any other specific fields for a shark plan
 }
 
@@ -19,6 +20,7 @@ const SharkSchema = new Schema<IShark>({
   dailyIncome: { type: Number, required: true },
   durationDays: { type: Number, required: true },
   levelNumber: { type: Number, required: true, index: true },
+  isLocked: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Ensure unique title per level to avoid confusion, if necessary

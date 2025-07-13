@@ -22,6 +22,11 @@ interface WithdrawalRequest {
   reviewedBy?: string;
   reviewedAt?: string;
   paymentUtr?: string;
+  upiId?: string;
+  bankAccount?: string;
+  ifsc?: string;
+  accountHolder?: string;
+  qrImage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -433,7 +438,27 @@ const AdminWithdrawals = () => {
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">UPI ID</p>
-                            <p className="font-semibold text-sm">{withdrawal?.upiId}</p>
+                            <p className="font-semibold text-sm">{withdrawal?.upiId || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Bank Account</p>
+                            <p className="font-semibold text-xs">{withdrawal?.bankAccount || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">IFSC</p>
+                            <p className="font-semibold text-xs">{withdrawal?.ifsc || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Account Holder</p>
+                            <p className="font-semibold text-xs">{withdrawal?.accountHolder || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">QR Image</p>
+                            {withdrawal?.qrImage ? (
+                              <img src={withdrawal.qrImage} alt="QR" className="w-20 h-20 object-contain border rounded" />
+                            ) : (
+                              <span className="text-xs">-</span>
+                            )}
                           </div>
                           <div>
                             <p className="text-sm text-gray-600">Tax</p>
@@ -594,7 +619,32 @@ const AdminWithdrawals = () => {
                   </div>
                 </div>
 
-               
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>UPI ID</Label>
+                    <p className="font-mono text-sm">{selectedWithdrawal.upiId || '-'}</p>
+                  </div>
+                  <div>
+                    <Label>Bank Account</Label>
+                    <p className="text-xs">{selectedWithdrawal.bankAccount || '-'}</p>
+                  </div>
+                  <div>
+                    <Label>IFSC</Label>
+                    <p className="text-xs">{selectedWithdrawal.ifsc || '-'}</p>
+                  </div>
+                  <div>
+                    <Label>Account Holder</Label>
+                    <p className="text-xs">{selectedWithdrawal.accountHolder || '-'}</p>
+                  </div>
+                  <div>
+                    <Label>QR Image</Label>
+                    {selectedWithdrawal.qrImage ? (
+                      <img src={selectedWithdrawal.qrImage} alt="QR" className="w-32 h-32 object-contain border rounded" />
+                    ) : (
+                      <span className="text-xs">-</span>
+                    )}
+                  </div>
+                </div>
 
                 {dialogMode === 'approve' && (
                   <>
