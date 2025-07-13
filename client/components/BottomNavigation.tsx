@@ -1,4 +1,4 @@
-import { Home, Smartphone, Share2, User } from "lucide-react";
+import { Home, Smartphone, Wallet, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -8,11 +8,9 @@ const BottomNavigation = () => {
 
   const navItems = [
     { path: "/dashboard", icon: Home, label: "Home" },
-   
-    { path: "/recharge", icon: User, label: "Recharge" },
-    { path: "/withdraw", icon: User, label: "Withdraw" },
+    { path: "/recharge", icon: Smartphone, label: "Recharge" },
+    { path: "/withdraw", icon: Wallet, label: "Withdraw" },
     { path: "/profile", icon: User, label: "Profile" },
-
   ];
 
   return (

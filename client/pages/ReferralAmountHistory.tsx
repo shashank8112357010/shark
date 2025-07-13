@@ -21,6 +21,27 @@ interface ReferralAmountRecord {
   withdrawalDate?: string;
 }
 
+interface ReferralWithdrawalRecord {
+  _id: string;
+  amount: number;
+  createdAt: string;
+  metadata?: {
+    originalAmount?: number;
+    cutAmount?: number;
+    finalAmount?: number;
+    cutRate?: number;
+  };
+}
+
+function fetchWithTimeout(resource: RequestInfo, options: RequestInit = {}, timeout = 10000) {
+  return Promise.race([
+    fetch(resource, options),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), timeout)
+    )
+  ]);
+}
+
 const ReferralAmountHistory = () => {
   const { userData, loading: userLoading } = useUser();
   const { toast } = useToast();
@@ -29,23 +50,29 @@ const ReferralAmountHistory = () => {
   const [totalReferrals, setTotalReferrals] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [withdrawals, setWithdrawals] = useState<ReferralWithdrawalRecord[]>([]);
 
   useEffect(() => {
     const fetchReferralData = async () => {
+      console.log('DEBUG: userData.phone for referral history:', userData?.phone);
       if (!userData?.phone) {
         if (!userLoading) {
           setLoading(false);
-          setError("Please log in to view your referral history.");
+          setError("Please log in to view your referral history. (No phone number found)");
         }
         return;
       }
 
       setLoading(true);
       setError(null);
-      
       try {
-        // Fetch referral amount history
-        const historyResponse = await fetch(`/api/referral-amount/history/${userData.phone}`);
+        console.log('Fetching referral history...');
+        const historyResponse = await fetchWithTimeout(`/api/referral-amount/history/${userData.phone}`);
+        console.log('Fetched referral history');
+        const contentType = historyResponse.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response. Please try again or check your connection.');
+        }
         if (!historyResponse.ok) {
           const errorData = await historyResponse.json().catch(() => ({}));
           throw new Error(errorData.error || "Failed to fetch referral history");
@@ -53,14 +80,23 @@ const ReferralAmountHistory = () => {
         const historyData = await historyResponse.json();
         setReferralHistory(historyData.referralHistory || []);
 
-        // Fetch stats
-        const statsResponse = await fetch(`/api/referral-amount/stats/${userData.phone}`);
+        console.log('Fetching referral stats...');
+        const statsResponse = await fetchWithTimeout(`/api/referral-amount/stats/${userData.phone}`);
+        console.log('Fetched referral stats');
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
           if (statsData.success) {
             setTotalEarnings(statsData.totalEarned || 0);
             setTotalReferrals(statsData.totalReferrals || 0);
           }
+        }
+
+        console.log('Fetching referral withdrawals...');
+        const withdrawalResponse = await fetchWithTimeout(`/api/wallet/transactions?type=deposit&source=referral_withdrawal&phone=${userData.phone}`);
+        console.log('Fetched referral withdrawals');
+        if (withdrawalResponse.ok) {
+          const withdrawalData = await withdrawalResponse.json();
+          setWithdrawals(withdrawalData.transactions || []);
         }
       } catch (err: any) {
         setError(err.message || "An unknown error occurred");
@@ -139,12 +175,12 @@ const ReferralAmountHistory = () => {
           </Card>
         </div>
 
-        {/* Referral History List */}
+        {/* Referral Rewards */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4 text-readable">
-            Earnings from Referral Purchases
+            Referral Rewards
           </h2>
-          
+          {/* Rewards Section */}
           {referralHistory.length === 0 ? (
             <div className="text-center py-10">
               <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
@@ -154,7 +190,7 @@ const ReferralAmountHistory = () => {
                 No Referral Earnings Yet
               </h3>
               <p className="text-gray-500 mb-6">
-                Earn ₹300 for each referral's first shark purchase only.
+                Earn ₹500 for each referral's first shark purchase only.
               </p>
             </div>
           ) : (
@@ -215,16 +251,56 @@ const ReferralAmountHistory = () => {
           )}
         </div>
 
+        {/* Withdrawals Section */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4 text-readable">
+            Referral Withdrawals
+          </h2>
+          {withdrawals.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              No referral withdrawals yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {withdrawals.map((w) => (
+                <Card key={w._id} className="overflow-hidden border-blue-200">
+                  <CardHeader className="pb-2 flex flex-row justify-between items-center">
+                    <div>
+                      <div className="flex items-center text-blue-700 font-semibold text-lg">
+                        <IndianRupee size={16} className="mr-1" />
+                        {w.metadata?.finalAmount?.toFixed(2) || w.amount.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Withdrawn on: {new Date(w.createdAt).toLocaleDateString('en-IN', {
+                          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-600">
+                        Original: ₹{w.metadata?.originalAmount?.toFixed(2) || w.amount.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-orange-600">
+                        15% Cut: ₹{w.metadata?.cutAmount?.toFixed(2) || ((w.metadata?.originalAmount || w.amount) * 0.15).toFixed(2)}
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Info Card */}
         <div className="mt-8 bg-blue-50 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">How Referral Earnings Work</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Earn ₹300 for each referral's FIRST shark purchase only</li>
+                            <li>• Earn ₹500 for each referral's FIRST shark purchase only</li>
             <li>• One-time reward per referral - subsequent purchases don't earn rewards</li>
             <li>• No reward for just registration - only for shark purchases</li>
-            <li>• Minimum withdrawal: ₹1000</li>
-            <li>• 30% tax if withdrawing less than ₹5000</li>
-            <li>• No tax if withdrawing ₹5000 or more</li>
+            <li>• Minimum transfer: ₹1000</li>
+            <li>• 15% cut applied when transferring to balance</li>
+            <li>• Example: ₹1000 referral earnings → ₹850 in balance</li>
           </ul>
         </div>
       </div>

@@ -38,13 +38,20 @@ router.get("/stats/:phone", async (req, res) => {
     const stats = totalStats[0] || { totalEarned: 0, totalReferrals: 0 };
     const allTime = allTimeStats[0] || { allTimeEarned: 0, allTimeReferrals: 0 };
     
+    const availableStats = await ReferralAmount.aggregate([
+      { $match: { referrer: phone, status: 'completed' } },
+      { $group: { _id: null, availableReferralEarnings: { $sum: "$rewardAmount" } } }
+    ]);
+    const availableReferralEarnings = availableStats[0]?.availableReferralEarnings || 0;
+    
     res.json({
       success: true,
-      totalEarned: stats.totalEarned, // Available for withdrawal
-      totalReferrals: stats.totalReferrals, // Current available
-      allTimeEarned: allTime.allTimeEarned, // Total ever earned
-      allTimeReferrals: allTime.allTimeReferrals, // Total ever made
-      perReferralAmount: 300 // Fixed amount per referral
+      totalEarned: allTime.allTimeEarned, // Show all-time earned (completed + withdrawn)
+      totalReferrals: allTime.allTimeReferrals, // Show all-time referrals (completed + withdrawn)
+      allTimeEarned: allTime.allTimeEarned, // For reference
+      allTimeReferrals: allTime.allTimeReferrals, // For reference
+      perReferralAmount: 500, // Fixed amount per referral
+      availableReferralEarnings // Only not-yet-withdrawn referral earnings
     });
   } catch (error: any) {
     console.error('Error fetching referral amount stats:', error);
@@ -186,18 +193,13 @@ router.post("/withdraw-to-balance", async (req, res) => {
       });
     }
     
-    // Calculate tax and final amount
+    // Calculate cut and final amount (15% cut on all amounts)
     let finalAmount = totalReferralAmount;
-    let taxAmount = 0;
-    let taxRate = 0;
+    let cutAmount = 0;
+    let cutRate = 0.15; // 15% cut
     
-    if (totalReferralAmount < 5000) {
-      // Apply 30% tax if amount is less than ₹5000
-      taxRate = 0.30;
-      taxAmount = totalReferralAmount * taxRate;
-      finalAmount = totalReferralAmount - taxAmount;
-    }
-    // If amount >= 5000, no tax is applied
+    cutAmount = totalReferralAmount * cutRate;
+    finalAmount = totalReferralAmount - cutAmount;
     
     // Create deposit transaction for the final amount
     const depositTransactionId = generateTransactionId();
@@ -206,34 +208,17 @@ router.post("/withdraw-to-balance", async (req, res) => {
       type: TransactionType.DEPOSIT,
       amount: finalAmount,
       transactionId: depositTransactionId,
-      description: `Referral earnings transferred to balance${taxAmount > 0 ? ` (Tax: ₹${taxAmount.toFixed(2)})` : ''}`,
+      description: `Referral earnings transferred to balance (15% cut: ₹${cutAmount.toFixed(2)})`,
       status: TransactionStatus.COMPLETED,
       metadata: {
         source: 'referral_withdrawal',
         originalAmount: totalReferralAmount,
-        taxAmount: taxAmount,
-        taxRate: taxRate * 100,
+        cutAmount: cutAmount,
+        cutRate: cutRate * 100,
         finalAmount: finalAmount
       }
     });
     await depositTransaction.save();
-    
-    // Create withdrawal record transaction for tracking
-    const withdrawalTransactionId = generateTransactionId();
-    const withdrawalTransaction = new Transaction({
-      phone,
-      type: TransactionType.WITHDRAWAL,
-      amount: totalReferralAmount,
-      transactionId: withdrawalTransactionId,
-      description: `Referral earnings withdrawal (Transferred to balance)`,
-      status: TransactionStatus.COMPLETED,
-      metadata: {
-        withdrawalType: 'referral_to_balance',
-        depositTransactionId: depositTransactionId,
-        taxApplied: taxAmount > 0
-      }
-    });
-    await withdrawalTransaction.save();
     
     // Mark all referral amounts as withdrawn
     await ReferralAmount.updateMany(
@@ -241,7 +226,7 @@ router.post("/withdraw-to-balance", async (req, res) => {
       { 
         $set: { 
           status: 'withdrawn',
-          withdrawalTransactionId: withdrawalTransactionId,
+          withdrawalTransactionId: depositTransactionId, // Set to the deposit transaction ID
           withdrawalDate: new Date()
         }
       }
@@ -252,11 +237,10 @@ router.post("/withdraw-to-balance", async (req, res) => {
       message: 'Referral earnings successfully transferred to balance',
       details: {
         originalAmount: totalReferralAmount,
-        taxAmount: taxAmount,
-        taxRate: taxRate * 100,
+        cutAmount: cutAmount,
+        cutRate: cutRate * 100,
         finalAmount: finalAmount,
-        depositTransactionId: depositTransactionId,
-        withdrawalTransactionId: withdrawalTransactionId
+        depositTransactionId: depositTransactionId
       }
     });
     

@@ -191,7 +191,7 @@ const Invite = () => {
               Or share this link/QR with your friends to register
             </div>
             <div className="mt-2 text-green-600 text-sm font-semibold">
-              Earn ₹300 for each referral's FIRST shark purchase!
+              Earn ₹500 for each referral's FIRST shark purchase!
             </div>
             <div className="mt-1 text-xs text-gray-600">
               One-time reward per referral - only their first shark purchase counts

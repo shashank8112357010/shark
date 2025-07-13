@@ -102,24 +102,6 @@ router.get('/stats', authenticateAdmin, async (req, res) => {
         { $match: { status: { $ne: 'failed' } } },
         {
           $group: {
-            _id: "$phone",
-            balance: { 
-              $sum: { 
-                $switch: {
-                  branches: [
-                    { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-                    { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-                    { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-                    { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-                  ],
-                  default: 0
-                }
-              }
-            }
-          }
-        },
-        {
-          $group: {
             _id: null,
             totalBalance: { $sum: '$balance' },
             avgBalance: { $avg: '$balance' },
@@ -271,6 +253,7 @@ router.post('/recharge-requests/:id/review', authenticateAdmin, async (req, res)
         status: 'completed', // lowercase to match enum
         transactionId, // required unique field
         metadata: {
+          source: 'recharge', // <-- Add this line
           rechargeRequestId: rechargeRequest._id,
           utrNumber: rechargeRequest.utrNumber
         }
@@ -457,7 +440,23 @@ router.get('/users', authenticateAdmin, async (req, res) => {
               $sum: { 
                 $switch: {
                   branches: [
-                    { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
+                    // Only include DEPOSITs that are NOT recharge
+                    {
+                      case: {
+                        $and: [
+                          { $eq: ["$type", TransactionType.DEPOSIT] },
+                          {
+                            $not: {
+                              $or: [
+                                { $eq: ["$metadata.source", "recharge"] },
+                                { $eq: ["$metadata.incomeType", "recharge"] }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      then: "$amount"
+                    },
                     { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
                     { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
                     { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }

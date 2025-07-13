@@ -202,4 +202,66 @@ router.post("/calculate-all", async (req, res) => {
   }
 });
 
+// Create test income transaction (for testing purposes only)
+router.post("/test-income", async (req, res) => {
+  try {
+    await connectDb();
+    const { phone, amount, dayNumber, sharkTitle = 'Shark A', sharkLevel = 1 } = req.body;
+    
+    if (!phone || !amount || !dayNumber) {
+      return res.status(400).json({ 
+        success: false,
+        error: "Phone, amount, and dayNumber are required" 
+      });
+    }
+    
+    // Create income transaction
+    const transactionId = `TEST-INCOME-${dayNumber}-${Date.now()}`;
+    const transaction = new Transaction({
+      phone,
+      type: TransactionType.DEPOSIT,
+      amount: Number(amount),
+      status: 'completed',
+      transactionId,
+      description: `Daily income from ${sharkTitle} - Day ${dayNumber}`,
+      metadata: {
+        incomeType: 'daily_shark_income',
+        sharkTitle,
+        sharkLevel,
+        dayNumber,
+        isTestIncome: true
+      }
+    });
+    
+    await transaction.save();
+    
+    // Create income record
+    const incomeRecord = new Income({
+      phone,
+      date: new Date(),
+      sharkTitle,
+      sharkLevel,
+      dailyIncomeAmount: Number(amount),
+      sharkPurchaseId: 'test-investment',
+      transactionId: transaction._id.toString()
+    });
+    
+    await incomeRecord.save();
+    
+    res.json({
+      success: true,
+      message: `Test income of ₹${amount} created for day ${dayNumber}`,
+      transactionId: transaction._id,
+      incomeId: incomeRecord._id
+    });
+  } catch (error: any) {
+    console.error('Error creating test income:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to create test income', 
+      details: error.message 
+    });
+  }
+});
+
 export default router;

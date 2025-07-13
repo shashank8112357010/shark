@@ -5,27 +5,36 @@ import Transaction, { TransactionType, TransactionStatus } from '../models/Trans
  * Only counts completed transactions to ensure accurate balance
  */
 export async function calculateUserBalance(phone: string): Promise<number> {
-  const balanceResult = await Transaction.aggregate([
-    { $match: { phone, status: TransactionStatus.COMPLETED } }, // Only count completed transactions
-    { $group: {
-      _id: null,
-      balance: { 
-        $sum: { 
-          $switch: {
-            branches: [
-              { case: { $eq: ["$type", TransactionType.DEPOSIT] }, then: "$amount" },
-              // { case: { $eq: ["$type", TransactionType.REFERRAL] }, then: "$amount" },
-              { case: { $eq: ["$type", TransactionType.WITHDRAWAL] }, then: { $multiply: ["$amount", -1] } },
-              { case: { $eq: ["$type", TransactionType.PURCHASE] }, then: { $multiply: ["$amount", -1] } }
-            ],
-            default: 0
-          }
-        }
-      }
-    }}
+  // Sum all non-recharge DEPOSITs
+  const nonRechargeDeposits = await Transaction.aggregate([
+    { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.DEPOSIT,
+      $or: [
+        { 'metadata.source': { $exists: false } },
+        { 'metadata.source': { $ne: 'recharge' } },
+        { 'metadata.incomeType': { $exists: false } },
+        { 'metadata.incomeType': { $ne: 'recharge' } }
+      ]
+    } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
   ]);
-  
-  return balanceResult[0]?.balance || 0;
+  const totalNonRechargeDeposits = nonRechargeDeposits[0]?.total || 0;
+
+  // Sum all PURCHASEs' fromBalance (from metadata)
+  const purchases = await Transaction.aggregate([
+    { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.PURCHASE, 'metadata.fromBalance': { $exists: true } } },
+    { $group: { _id: null, total: { $sum: "$metadata.fromBalance" } } }
+  ]);
+  const totalFromBalance = purchases[0]?.total || 0;
+
+  // Subtract withdrawals as before
+  const withdrawals = await Transaction.aggregate([
+    { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.WITHDRAWAL } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
+  ]);
+  const totalWithdrawals = withdrawals[0]?.total || 0;
+
+  // Non-recharge balance = non-recharge deposits - fromBalance (purchases) - withdrawals
+  return totalNonRechargeDeposits - totalFromBalance - totalWithdrawals;
 }
 
 /**
@@ -37,4 +46,35 @@ export async function checkSufficientBalance(phone: string, amount: number): Pro
     hasBalance: currentBalance >= amount,
     currentBalance
   };
+}
+
+/**
+ * Calculate available recharge amount for a user (sum of all completed DEPOSITs with metadata.source === 'recharge', minus all PURCHASEs that used recharge)
+ */
+export async function calculateAvailableRecharge(phone: string): Promise<number> {
+  // Sum all completed recharge DEPOSITs
+  const rechargeDeposits = await Transaction.aggregate([
+    { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.DEPOSIT, 'metadata.source': 'recharge' } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
+  ]);
+  const totalRecharge = rechargeDeposits[0]?.total || 0;
+
+  // Sum all PURCHASEs' fromRecharge (from metadata)
+  const purchases = await Transaction.aggregate([
+    { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.PURCHASE, 'metadata.fromRecharge': { $exists: true } } },
+    { $group: { _id: null, total: { $sum: "$metadata.fromRecharge" } } }
+  ]);
+  const totalFromRecharge = purchases[0]?.total || 0;
+
+  // Available recharge is recharge - what was actually used from recharge
+  return Math.max(0, totalRecharge - totalFromRecharge);
+}
+
+/**
+ * Calculate available non-recharge balance (referral, daily income, etc.)
+ */
+export async function calculateAvailableNonRechargeBalance(phone: string): Promise<number> {
+  const totalBalance = await calculateUserBalance(phone);
+  // This is already excluding recharge, so just return it
+  return totalBalance;
 }

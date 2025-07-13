@@ -91,16 +91,17 @@ router.post("/request", async (req, res) => {
   try {
     const { phone, amount, password, upiId } = req.body;
 
-    // Validate time
-    if (!isWithdrawalTimeValid()) {
-      return res.status(400).json({
-        error: "Withdrawals are only allowed Monday to Friday from 8:00 AM to 10:00 PM IST",
-        timeWindow: {
-          start: "8:00 AM",
-          end: "10:00 PM"
-        }
-      });
-    }
+    // TEMPORARY: Allow withdrawals at any time for testing
+    // if (!isWithdrawalTimeValid()) {
+    //   return res.status(400).json({
+    //     error: "Withdrawals are only allowed Monday to Friday from 8:00 AM to 10:00 PM IST",
+    //     timeWindow: {
+    //       start: "8:00 AM",
+    //       end: "10:00 PM"
+    //     }
+    //   });
+    // }
+    // REMEMBER TO RESTORE TIME CHECK AFTER TESTING
 
     // Validate user
     const user = await User.findOne({ phone });
@@ -159,6 +160,7 @@ router.post("/request", async (req, res) => {
       phone,
       type: TransactionType.WITHDRAWAL,
       amount,
+      status: TransactionStatus.COMPLETED, // Set status to completed for immediate balance deduction
       transactionId,
       description: `Withdrawal request to UPI: ${upiId}`
     });

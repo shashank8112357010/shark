@@ -43,6 +43,7 @@ const Profile = () => {
   // Referral data now comes from UserContext
   const [loadingStats, setLoadingStats] = useState(false);
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [availableReferralEarnings, setAvailableReferralEarnings] = useState(0);
 
   useEffect(() => {
     const fetchProfileStats = async () => {
@@ -63,25 +64,26 @@ const Profile = () => {
         }
         const statsData = await statsResponse.json();
         setTotalRecharge(statsData.totalRecharge || 0);
+        // Use the new totalDailyIncome field from wallet stats
+        const walletDailyIncome = statsData.totalDailyIncome || 0;
+        
+        console.log('📊 Wallet Stats:', {
+          totalRecharge: statsData.totalRecharge,
+          totalDailyIncome: statsData.totalDailyIncome,
+          totalWithdrawals: statsData.totalWithdrawals,
+          totalSpentOnPlans: statsData.totalSpentOnPlans
+        });
 
-        // Fetch total income from shark investments (separate from balance)
-        const incomeResponse = await fetch(`/api/income/total/${userData.phone}`);
-        if (incomeResponse.ok) {
-          const incomeData = await incomeResponse.json();
-          if (incomeData.success) {
-            // Set total shark income (exclusive of balance)
-            setTotalIncome(incomeData.totalIncome || 0);
-            console.log(`📊 Total shark income loaded: ₹${incomeData.totalIncome} from ${incomeData.totalRecords} records`);
-          } else {
-            console.warn('Income API returned success=false:', incomeData);
-            setTotalIncome(0);
-          }
-        } else {
-          // Fallback to referral earnings if income API is not available
-          console.warn('Income API not available, using referral earnings as fallback');
-          setTotalIncome(statsData.totalReferralEarnings || 0);
+        // Use wallet stats for daily income (more accurate)
+        setTotalIncome(walletDailyIncome);
+        console.log(`📊 Total daily income from wallet stats: ₹${walletDailyIncome}`);
+
+        // Fetch referral stats for availableReferralEarnings
+        const referralStatsResponse = await fetch(`/api/referral-amount/stats/${userData.phone}`);
+        if (referralStatsResponse.ok) {
+          const referralStats = await referralStatsResponse.json();
+          setAvailableReferralEarnings(referralStats.availableReferralEarnings || 0);
         }
-
       } catch (error: any) {
         toast({
           variant: "destructive",
@@ -114,8 +116,8 @@ const Profile = () => {
     if (referralEarnings < 1000) {
       toast({
         variant: "destructive",
-        title: "Withdrawal Not Allowed",
-        description: `Minimum withdrawal amount is ₹1000. Your current referral balance is ₹${referralEarnings}`,
+        title: "Transfer Not Allowed",
+        description: `Minimum transfer amount is ₹1000. Your current referral balance is ₹${referralEarnings}`,
       });
       return;
     }
@@ -136,14 +138,12 @@ const Profile = () => {
         throw new Error(data.error || 'Failed to process withdrawal');
       }
 
-      // Calculate tax info for display
-      const taxInfo = data.details.taxAmount > 0 
-        ? ` After ${data.details.taxRate}% tax deduction, ₹${data.details.finalAmount.toFixed(2)} has been added to your balance.`
-        : ` Full amount of ₹${data.details.finalAmount.toFixed(2)} has been added to your balance (no tax applied).`;
+      // Calculate cut info for display
+      const cutInfo = ` After 15% cut, ₹${data.details.finalAmount.toFixed(2)} has been added to your balance.`;
 
       toast({
-        title: "Withdrawal Successful!",
-        description: `₹${data.details.originalAmount} withdrawn from referral earnings.${taxInfo}`,
+        title: "Transfer Successful!",
+        description: `₹${data.details.originalAmount} transferred from referral earnings.${cutInfo}`,
       });
 
       // Refresh user data to update balance and referral stats
@@ -152,8 +152,8 @@ const Profile = () => {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Withdrawal Failed",
-        description: error.message || "Something went wrong during withdrawal",
+        title: "Transfer Failed",
+        description: error.message || "Something went wrong during transfer",
       });
     } finally {
       setWithdrawalLoading(false);
@@ -208,12 +208,13 @@ useEffect(() => {
     }
   }, [inviteCode]);
 
-  const displayBalance = userData?.balance?.toFixed(2) || "0.00";
-  const displayRecharge = totalRecharge.toFixed(2);
-  const displayIncome = totalIncome.toFixed(2);
-  const displayReferralEarnings = (userData?.totalReferralEarnings || 0).toFixed(2);
+  // Display values with proper formatting
+  const displayBalance = userData?.balance?.toFixed(2) || "0.00"; // Current wallet balance (includes all transactions)
+  const displayRecharge = totalRecharge.toFixed(2); // Only actual recharge amounts (excludes daily income)
+  const displayIncome = totalIncome.toFixed(2); // Total daily income from shark investments
+  const displayReferralEarnings = availableReferralEarnings.toFixed(2);
   const totalReferralCount = userData?.totalReferralCount || 0;
-  const totalReferralEarnings = userData?.totalReferralEarnings || 0;
+  const totalReferralEarnings = availableReferralEarnings;
 
   return (
     <Layout className="scroll-smooth no-overscroll">
@@ -233,7 +234,7 @@ useEffect(() => {
           <div className="bg-white rounded-xl p-4 card-shadow text-center">
             <div className="flex items-center justify-center mb-2">
               <Download size={20} className="text-shark-blue" />
-              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayRecharge - displayIncome }</span>}
+              {loadingStats ? <LoadingSpinner size={16} className="ml-1" /> : <span className="text-shark-blue font-semibold">{displayRecharge}</span>}
             </div>
             <div className="text-gray-600 text-sm text-readable">Recharge</div>
           </div>
@@ -267,7 +268,7 @@ useEffect(() => {
           {/* Withdrawal Section */}
           <div className="border-t pt-3 mt-3">
             <div className="flex justify-between items-center mb-2">
-              <div className="text-sm font-medium text-gray-700">Withdraw to Balance</div>
+              <div className="text-sm font-medium text-gray-700">Transfer to Balance</div>
               <div className="text-sm text-gray-600">
                 Available: ₹{displayReferralEarnings}
               </div>
@@ -275,15 +276,11 @@ useEffect(() => {
             
             {totalReferralEarnings < 1000 ? (
               <div className="text-xs text-red-500 mb-2">
-                Minimum withdrawal amount is ₹1000
-              </div>
-            ) : totalReferralEarnings < 5000 ? (
-              <div className="text-xs text-orange-500 mb-2">
-                30% tax will be deducted (amount &lt; ₹5000)
+                Minimum transfer amount is ₹1000
               </div>
             ) : (
-              <div className="text-xs text-green-600 mb-2">
-                No tax (amount ≥ ₹5000)
+              <div className="text-xs text-orange-500 mb-2">
+                15% cut will be applied: ₹{totalReferralEarnings} → ₹{(totalReferralEarnings * 0.85).toFixed(2)}
               </div>
             )}
             
@@ -302,13 +299,13 @@ useEffect(() => {
                   Processing...
                 </div>
               ) : (
-                `Withdraw ₹${displayReferralEarnings}`
+                `Transfer to Balance`
               )}
             </Button>
           </div>
           
           <div className="mt-3 text-xs text-gray-500">
-            Earn ₹300 for each referral's FIRST shark purchase only!
+            Earn ₹500 for each referral's FIRST shark purchase only!
           </div>
         </div>
       </div>

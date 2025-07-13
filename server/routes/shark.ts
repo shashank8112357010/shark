@@ -6,7 +6,7 @@ import ReferralAmount from "../models/ReferralAmount";
 import User from "../models/User";
 import SharkModel, { IShark } from "../models/Shark"; // Import the new Shark model
 import { connectDb } from "../utils/db";
-import { checkSufficientBalance } from "../utils/balanceCalculator";
+import { checkSufficientBalance, calculateAvailableRecharge, calculateAvailableNonRechargeBalance } from "../utils/balanceCalculator";
 import QRCode from "qrcode";
 
 const router = Router();
@@ -59,32 +59,49 @@ router.post("/buy", async (req, res) => {
     transaction.qrCode = qrCode;
     await transaction.save();
 
-    // Check balance using consistent utility function
-    const balanceCheck = await checkSufficientBalance(phone, Number(price));
-    console.log(`Balance check for ${phone}: Current balance ₹${balanceCheck.currentBalance}, Required: ₹${price}, Has sufficient: ${balanceCheck.hasBalance}`);
-    
-    if (!balanceCheck.hasBalance) {
+    // Calculate available recharge and non-recharge balance
+    const availableRecharge = await calculateAvailableRecharge(phone);
+    const availableBalance = await calculateAvailableNonRechargeBalance(phone);
+    const totalAvailable = availableRecharge + availableBalance;
+
+    if (totalAvailable < Number(price)) {
       await Transaction.findOneAndUpdate(
         { transactionId },
         {
           status: TransactionStatus.FAILED,
-          description: `Insufficient balance. Available: ₹${balanceCheck.currentBalance}, Required: ₹${price}`
+          description: `Insufficient funds. Recharge: ₹${availableRecharge}, Balance: ₹${availableBalance}, Required: ₹${price}`
         }
       );
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Insufficient balance",
-        currentBalance: balanceCheck.currentBalance,
+        availableRecharge,
+        availableBalance,
         requiredAmount: Number(price)
       });
     }
 
+    // Deduct from recharge first, then balance
+    let fromRecharge = 0;
+    let fromBalance = 0;
+    if (availableRecharge >= Number(price)) {
+      fromRecharge = Number(price);
+      fromBalance = 0;
+    } else {
+      fromRecharge = availableRecharge;
+      fromBalance = Number(price) - availableRecharge;
+    }
 
-    // Mark transaction as completed (this will deduct balance in aggregation)
+    // Mark transaction as completed and record deduction sources
     await Transaction.findOneAndUpdate(
       { transactionId },
       {
         status: TransactionStatus.COMPLETED,
-        description: `Shark purchase completed - ${shark}`
+        description: `Shark purchase completed - ${shark}`,
+        metadata: {
+          ...((shark && price) ? { shark, price: Number(price) } : {}),
+          fromRecharge,
+          fromBalance
+        }
       }
     );
 
@@ -109,7 +126,7 @@ router.post("/buy", async (req, res) => {
       
       if (!existingReferralReward) {
         // This is the first shark purchase by this referred user - give reward
-        const rewardAmount = 300; // Fixed ₹300 reward for FIRST shark purchase
+        const rewardAmount = 500; // Fixed ₹500 reward for FIRST shark purchase
         
         // Create reward transaction for the referrer
         const rewardTransactionId = generateTransactionId();

@@ -21,6 +21,8 @@ router.get("/balance/:phone", async (req, res) => {
   }
 });
 
+// NOTE: Balance excludes recharge transactions as per business logic
+
 // Submit recharge request
 router.post("/recharge-request", async (req, res) => {
   try {
@@ -117,7 +119,8 @@ router.post("/recharge", async (req, res) => {
       amount: Number(amount),
       description: 'Direct admin recharge',
       status: 'completed',
-      transactionId
+      transactionId,
+      metadata: { source: 'recharge' } // <-- Add this line
     });
     await transaction.save();
     
@@ -165,6 +168,7 @@ router.post("/withdraw", async (req, res) => {
 });
 
 // Get wallet statistics for a user
+// FIXED: Now properly separates actual recharge from daily income to prevent incorrect calculations
 router.get("/stats/:phone", async (req, res) => {
   try {
     await connectDb();
@@ -182,7 +186,33 @@ router.get("/stats/:phone", async (req, res) => {
           _id: "$phone", // Group by phone, though it's already matched
           totalRecharge: {
             $sum: {
-              $cond: [{ $eq: ["$type", TransactionType.DEPOSIT] }, "$amount", 0],
+              $cond: [
+                { 
+                  $and: [
+                    { $eq: ["$type", TransactionType.DEPOSIT] },
+                    { $or: [
+                      { $eq: ["$metadata.source", "recharge"] },
+                      { $eq: ["$metadata.incomeType", "recharge"] }
+                    ]}
+                  ]
+                }, 
+                "$amount", 
+                0
+              ],
+            },
+          },
+          totalDailyIncome: {
+            $sum: {
+              $cond: [
+                { 
+                  $and: [
+                    { $eq: ["$type", TransactionType.DEPOSIT] },
+                    { $eq: ["$metadata.incomeType", "daily_shark_income"] }
+                  ]
+                }, 
+                "$amount", 
+                0
+              ],
             },
           },
           totalWithdrawals: {
@@ -213,6 +243,7 @@ router.get("/stats/:phone", async (req, res) => {
       // No transactions found, return zero stats
       res.json({
         totalRecharge: 0,
+        totalDailyIncome: 0,
         totalWithdrawals: 0,
         totalSpentOnPlans: 0,
         totalReferralEarnings: 0,
@@ -221,6 +252,25 @@ router.get("/stats/:phone", async (req, res) => {
   } catch (error: any) {
     console.error("Error fetching wallet stats:", error);
     res.status(500).json({ error: "Failed to fetch wallet statistics", details: error.message });
+  }
+});
+
+// Get transactions for a user, filtered by type and source (for referral withdrawals, etc.)
+router.get('/transactions', async (req, res) => {
+  try {
+    await connectDb();
+    const { phone, type, source } = req.query;
+    if (!phone) {
+      return res.status(400).json({ success: false, error: 'Phone is required' });
+    }
+    const query = { phone };
+    if (type) query['type'] = type;
+    if (source) query['metadata.source'] = source;
+    const transactions = await Transaction.find(query).sort({ createdAt: -1 }).limit(100);
+    res.json({ success: true, transactions });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
   }
 });
 
