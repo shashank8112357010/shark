@@ -1,8 +1,9 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import User from '../models/User';
-import { connectDb } from '../utils/db';
+
 import QRCode from 'qrcode';
+import { connectDb } from "../utils/db";
 
 const router = Router();
 
