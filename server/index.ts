@@ -13,6 +13,11 @@ import incomeRouter from "./routes/income";
 import bankDetailsRouter from "./routes/bankDetails";
 import uploadRouter from "./routes/upload";
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export function createServer() {
   const app = express();
@@ -55,7 +60,6 @@ export function createServer() {
   
   // Add bank details routes
   app.use("/api/bank-details", bankDetailsRouter);
-  
   // Add upload routes
   app.use("/api/upload", uploadRouter);
   
