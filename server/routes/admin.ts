@@ -392,16 +392,16 @@ router.post('/withdrawals/:id/reject', authenticateAdmin, async (req, res) => {
     // Refund the amount back to user's balance using Transaction model
     
     // Create refund transaction
-    const refundTransactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-    const refundTransaction = new (Transaction as any)({
-      phone: withdrawal.phone,
-      type: TransactionType.DEPOSIT,
-      amount: withdrawal.amount,
-      status: TransactionStatus.COMPLETED,
-      transactionId: refundTransactionId,
-      description: `Withdrawal refund for rejected request by ${admin.email}`
-    });
-    await refundTransaction.save();
+    // const refundTransactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    // const refundTransaction = new (Transaction as any)({
+    //   phone: withdrawal.phone,
+    //   type: TransactionType.DEPOSIT,
+    //   amount: withdrawal.amount,
+    //   status: TransactionStatus.COMPLETED,
+    //   transactionId: refundTransactionId,
+    //   description: `Withdrawal refund for rejected request by ${admin.email}`
+    // });
+    // await refundTransaction.save();
     
     // Also update the original withdrawal transaction status
     const originalTransaction = await (Transaction as any).findById(withdrawal.transactionId);
@@ -541,6 +541,22 @@ router.get('/sharks', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Get sharks error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Get only the QR image for a withdrawal by ID
+router.get('/withdrawals/:id/qr', authenticateAdmin, async (req, res) => {
+  try {
+    await connectDb();
+    const { id } = req.params;
+    const withdrawal = await Withdrawal.findById(id).select('qrImage');
+    if (!withdrawal) {
+      return res.status(404).json({ qrImage: null, error: 'Withdrawal not found' });
+    }
+    res.json({ qrImage: withdrawal.qrImage || null });
+  } catch (error) {
+    console.error('Get QR image error:', error);
+    res.status(500).json({ qrImage: null, error: 'Server error' });
   }
 });
 

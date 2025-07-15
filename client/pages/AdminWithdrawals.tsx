@@ -32,6 +32,9 @@ interface WithdrawalRequest {
 }
 
 const AdminWithdrawals = () => {
+  // ...existing state
+  const [qrDialogImage, setQrDialogImage] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -233,6 +236,8 @@ const AdminWithdrawals = () => {
     setDialogMode('view');
     setApprovalData({paymentUtr: '', adminNotes: '' });
     setRejectionData({ adminNotes: '' });
+    setQrDialogImage(null);
+    setQrLoading(false);
   };
 
   const formatCurrency = (amount: number) => {
@@ -460,14 +465,7 @@ const AdminWithdrawals = () => {
                             <p className="text-sm text-gray-600">Account Holder</p>
                             <p className="font-semibold text-xs">{withdrawal?.accountHolder || '-'}</p>
                           </div>
-                          <div>
-                            <p className="text-sm text-gray-600">QR Image</p>
-                            {withdrawal?.qrImage ? (
-                              <img src={getQrImageSrc(withdrawal.qrImage)} alt="QR" className="w-20 h-20 object-contain border rounded" />
-                            ) : (
-                              <span className="text-xs">-</span>
-                            )}
-                          </div>
+                          {/* QR Image removed from list for performance */}
                           <div>
                             <p className="text-sm text-gray-600">Tax</p>
                             <p className="text-sm text-red-600">{formatCurrency(withdrawal.tax)}</p>
@@ -586,6 +584,23 @@ const AdminWithdrawals = () => {
         {/* Dialog */}
         {selectedWithdrawal && (
           <Dialog open={!!selectedWithdrawal} onOpenChange={() => closeDialog()}>
+            {/* Fetch QR image on dialog open if present */}
+            {selectedWithdrawal.qrImage && !qrDialogImage && !qrLoading && (
+              (() => {
+                setQrLoading(true);
+                fetch(`/api/admin/withdrawals/${selectedWithdrawal._id}/qr`, {
+                  headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` }
+                })
+                  .then(res => res.json())
+                  .then(data => {
+                    setQrDialogImage(data.qrImage || null);
+                  })
+                  .catch(() => setQrDialogImage(null))
+                  .finally(() => setQrLoading(false));
+                return null;
+              })()
+            )}
+
             <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>
@@ -646,9 +661,11 @@ const AdminWithdrawals = () => {
                   </div>
                   <div>
                     <Label>QR Image</Label>
-                    {selectedWithdrawal.qrImage ? (
+                    {qrLoading ? (
+                      <LoadingSpinner size={24} />
+                    ) : qrDialogImage ? (
                       <img
-                        src={getQrImageSrc(selectedWithdrawal.qrImage)}
+                        src={getQrImageSrc(qrDialogImage)}
                         alt="QR"
                         className="w-32 h-32 object-contain border rounded"
                       />

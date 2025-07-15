@@ -24,7 +24,6 @@ const Register = () => {
           loop
           muted
           className=" w-full h-full object-cover"
-       
         />
       <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "2rem auto", background: "#fff", padding: 24, borderRadius: 12, position: 'relative', zIndex: 1 }}>
       <h2>Register</h2>

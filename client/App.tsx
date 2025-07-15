@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import Login from "./pages/Login";
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Invite from "./pages/Invite";
@@ -26,7 +30,16 @@ import AdminManageSharks from "./pages/AdminManageSharks";
 import IncomeHistory from "./pages/IncomeHistory";
 import ForgotPassword from "./pages/ForgotPassword";
 import React from "react";
-
+// RootAuthRedirect: shows Login, but if invite param exists, shows registration form and pre-fills code
+const RootAuthRedirect = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  // Pass props to Login to control registration mode and prefill invite code
+  return <Login 
+    forceRegister={!!(params.get('invite') || params.get('invite_code'))}
+    prefillInvite={params.get('invite') || params.get('invite_code') || ''}
+  />;
+};
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -38,7 +51,7 @@ const App = () => (
       <BrowserRouter>
         <UserProvider>
         <Routes>
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<RootAuthRedirect />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<Dashboard />}/>
           <Route path="/profile" element={<Profile />} />

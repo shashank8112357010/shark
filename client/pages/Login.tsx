@@ -6,18 +6,23 @@ import { Phone, Lock, Key, Users, Eye, EyeOff } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 
-const Login = () => {
+interface LoginProps {
+  forceRegister?: boolean;
+  prefillInvite?: string;
+}
+
+const Login = ({ forceRegister = false, prefillInvite = "" }: LoginProps) => {
   const navigate = useNavigate();
   const { userData, refreshUserData } = useUser();
   const location = useLocation();
 
-  const [isLogin, setIsLogin] = useState(true);
+    const [isLogin, setIsLogin] = useState(!forceRegister);
   const [formData, setFormData] = useState({
     phone: "",
     password: "",
     confirmPassword: "",
     withdrawalPin: "",
-    invitationCode: "", // No dummy invite code
+    invitationCode: prefillInvite || "",
   });
 
   const [loading, setLoading] = useState(false);
