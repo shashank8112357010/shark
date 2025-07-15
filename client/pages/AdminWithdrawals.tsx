@@ -275,7 +275,15 @@ const AdminWithdrawals = () => {
     withdrawal.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-
+  // Helper to get the correct QR image src
+  const getQrImageSrc = (qrImage?: string) => {
+    if (!qrImage) return '';
+    if (qrImage.startsWith('http') || qrImage.startsWith('data:')) {
+      return qrImage;
+    }
+    // Assume it's a filename or relative path
+    return `/uploads/${qrImage}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -455,7 +463,7 @@ const AdminWithdrawals = () => {
                           <div>
                             <p className="text-sm text-gray-600">QR Image</p>
                             {withdrawal?.qrImage ? (
-                              <img src={withdrawal.qrImage} alt="QR" className="w-20 h-20 object-contain border rounded" />
+                              <img src={getQrImageSrc(withdrawal.qrImage)} alt="QR" className="w-20 h-20 object-contain border rounded" />
                             ) : (
                               <span className="text-xs">-</span>
                             )}
@@ -639,7 +647,11 @@ const AdminWithdrawals = () => {
                   <div>
                     <Label>QR Image</Label>
                     {selectedWithdrawal.qrImage ? (
-                      <img src={selectedWithdrawal.qrImage} alt="QR" className="w-32 h-32 object-contain border rounded" />
+                      <img
+                        src={getQrImageSrc(selectedWithdrawal.qrImage)}
+                        alt="QR"
+                        className="w-32 h-32 object-contain border rounded"
+                      />
                     ) : (
                       <span className="text-xs">-</span>
                     )}
