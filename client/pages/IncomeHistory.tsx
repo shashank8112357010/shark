@@ -69,7 +69,6 @@ const IncomeHistory = () => {
     return (
       <Layout>
         <div className="px-6 py-6">
-          <Header title="Income History" />
           <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
             <h2 className="text-xl font-semibold text-red-500 mb-2">
               Failed to Load Income History
@@ -90,7 +89,6 @@ const IncomeHistory = () => {
   return (
     <Layout className="scroll-smooth no-overscroll">
       <div className="px-6 py-6">
-        <Header title="Income History" />
 
         <div className="mt-8">
           {incomeHistory.length === 0 ? (

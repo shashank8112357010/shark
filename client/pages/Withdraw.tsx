@@ -598,14 +598,8 @@ const Withdraw = () => {
         </div>
       </div>
       
-      {/* Floating Button */}
-      <div className="fixed bottom-20 right-6 z-50">
-        <BankDetailsModal onDetailsSelected={handleBankDetailsSelected}>
-          <Button className="rounded-full w-14 h-14 bg-blue-600 hover:bg-blue-700 shadow-lg">
-            <Plus size={24} />
-          </Button>
-        </BankDetailsModal>
-      </div>
+
+     
     </Layout>
   );
 };

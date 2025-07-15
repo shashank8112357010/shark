@@ -89,7 +89,7 @@ const Profile = () => {
         const referralStatsResponse = await fetch(`/api/referral-amount/stats/${userData.phone}`);
         if (referralStatsResponse.ok) {
           const referralStats = await referralStatsResponse.json();
-          setAvailableReferralEarnings(referralStats.availableReferralEarnings || 0);
+          setAvailableReferralEarnings(referralStats.totalEarned || 0);
         }
 
       } catch (error: any) {
@@ -121,11 +121,11 @@ const Profile = () => {
 
     // Check minimum amount
     const referralEarnings = userData.totalReferralEarnings || 0;
-    if (referralEarnings < 1000) {
+    if (referralEarnings < 1500) {
       toast({
         variant: "destructive",
         title: "Transfer Not Allowed",
-        description: `Minimum transfer amount is ₹1000. Your current referral balance is ₹${referralEarnings}`,
+        description: `Minimum transfer amount is ₹1500. Your current referral balance is ₹${referralEarnings}`,
       });
       return;
     }
@@ -346,7 +346,7 @@ const Profile = () => {
               
               {totalReferralEarnings < 1000 ? (
                 <div className="text-xs text-red-600 mb-3 p-2 bg-red-50 rounded-lg border border-red-200">
-                  Minimum transfer amount is ₹1000
+                  Minimum transfer amount is ₹1500
                 </div>
               ) : (
                 <div className="text-xs text-orange-600 mb-3 p-2 bg-orange-50 rounded-lg border border-orange-200">

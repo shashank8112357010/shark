@@ -12,13 +12,12 @@ router.get("/balance/:phone", async (req, res) => {
     await connectDb();
     const phone = req.params.phone;
     
-    // Calculate total balance (recharge + non-recharge) for display
-    const rechargeBalance = await calculateAvailableRecharge(phone);
+    // Main balance (for shark purchase)
     const nonRechargeBalance = await calculateUserBalance(phone);
-    const totalBalance = nonRechargeBalance;
-    
+    // Recharge balance (for info only)
+    const rechargeBalance = await calculateAvailableRecharge(phone);
     res.json({ 
-      balance: totalBalance,
+      balance: nonRechargeBalance,
       rechargeBalance,
       nonRechargeBalance
     });

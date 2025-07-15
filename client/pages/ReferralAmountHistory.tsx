@@ -140,7 +140,6 @@ const ReferralAmountHistory = () => {
     return (
       <Layout className="scroll-smooth no-overscroll">
         <div className="px-6 py-6">
-          <Header title="Referral History" />
           
           {/* Loading Stats */}
           <div className="mt-6">

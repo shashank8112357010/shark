@@ -71,8 +71,8 @@ router.post("/buy", async (req, res) => {
       metadata: {
         shark,
         price: Number(price),
-        fromRecharge,
-        fromBalance
+        fromBalance: Number(price), // Deduct from main balance
+        fromRecharge: 0
       }
     });
     
