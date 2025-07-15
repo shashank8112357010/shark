@@ -50,7 +50,7 @@ router.get("/stats/:phone", async (req, res) => {
       totalReferrals: allTime.allTimeReferrals, // Show all-time referrals (completed + withdrawn)
       allTimeEarned: allTime.allTimeEarned, // For reference
       allTimeReferrals: allTime.allTimeReferrals, // For reference
-      perReferralAmount: 500, // Fixed amount per referral
+      perReferralAmount: 300, // Fixed amount per referral
       availableReferralEarnings // Only not-yet-withdrawn referral earnings
     });
   } catch (error: any) {
@@ -184,12 +184,12 @@ router.post("/withdraw-to-balance", async (req, res) => {
     const totalReferralAmount = totalStats[0]?.totalEarned || 0;
     
     // Check minimum withdrawal amount
-    if (totalReferralAmount < 1000) {
+    if (totalReferralAmount < 1500) {
       return res.status(400).json({
         success: false,
-        error: `Minimum withdrawal amount is ₹1000. Your current referral balance is ₹${totalReferralAmount}`,
+        error: `Minimum withdrawal amount is ₹1500. Your current referral balance is ₹${totalReferralAmount}`,
         currentAmount: totalReferralAmount,
-        minimumRequired: 1000
+        minimumRequired: 1500
       });
     }
     

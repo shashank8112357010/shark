@@ -5,6 +5,7 @@ export interface IRechargeRequest extends Document {
   amount: number;
   utrNumber: string;
   qrCode: string;
+  paymentScreenshot?: string; // Base64 encoded image or file path
   status: 'pending' | 'approved' | 'rejected';
   approvedAmount?: number;
   adminNotes?: string;
@@ -19,6 +20,7 @@ const RechargeRequestSchema = new Schema<IRechargeRequest>({
   amount: { type: Number, required: true, min: 1 },
   utrNumber: { type: String, required: true, unique: true },
   qrCode: { type: String, required: true },
+  paymentScreenshot: { type: String }, // Base64 encoded image or file path
   status: { 
     type: String, 
     enum: ['pending', 'approved', 'rejected'], 

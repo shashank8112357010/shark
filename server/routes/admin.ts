@@ -5,6 +5,7 @@ import RechargeRequest from '../models/RechargeRequest';
 import Withdrawal from '../models/Withdrawal';
 import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
 import { connectDb } from '../utils/db';
+import { calculateAvailableRecharge } from '../utils/balanceCalculator';
 import jwt from 'jsonwebtoken';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key';
@@ -610,6 +611,86 @@ router.patch('/sharks/level/:levelNumber/lock-status', authenticateAdmin, async 
     });
   } catch (error) {
     console.error('Bulk update sharks error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// Debug user balance - for troubleshooting balance issues
+router.get('/debug/balance/:phone', authenticateAdmin, async (req, res) => {
+  try {
+    await connectDb();
+    const { phone } = req.params;
+    
+    // Get all transactions for this user
+    const allTransactions = await (Transaction as any).find({ phone }).sort({ createdAt: -1 });
+    
+    // Get recharge deposits
+    const rechargeDeposits = await (Transaction as any).find({ 
+      phone, 
+      status: TransactionStatus.COMPLETED, 
+      type: TransactionType.DEPOSIT,
+      'metadata.source': 'recharge' 
+    });
+    
+    let totalRechargeDeposits = 0;
+    rechargeDeposits.forEach(tx => {
+      totalRechargeDeposits += tx.amount;
+    });
+    
+    // Get purchases with fromRecharge
+    const purchases = await (Transaction as any).find({ 
+      phone, 
+      status: TransactionStatus.COMPLETED, 
+      type: TransactionType.PURCHASE,
+      'metadata.fromRecharge': { $exists: true }
+    });
+    
+    let totalFromRecharge = 0;
+    purchases.forEach(tx => {
+      const fromRecharge = tx.metadata?.fromRecharge || 0;
+      totalFromRecharge += fromRecharge;
+    });
+    
+    // Calculate expected available recharge
+    const expectedAvailableRecharge = totalRechargeDeposits - totalFromRecharge;
+    
+    // Calculate using our function
+    const calculatedAvailableRecharge = await calculateAvailableRecharge(phone);
+    
+    res.json({
+      success: true,
+      debug: {
+        phone,
+        totalTransactions: allTransactions.length,
+        rechargeDeposits: {
+          count: rechargeDeposits.length,
+          total: totalRechargeDeposits,
+          transactions: rechargeDeposits.map(tx => ({
+            id: tx._id,
+            amount: tx.amount,
+            description: tx.description,
+            date: tx.createdAt
+          }))
+        },
+        purchases: {
+          count: purchases.length,
+          totalFromRecharge,
+          transactions: purchases.map(tx => ({
+            id: tx._id,
+            amount: tx.amount,
+            fromRecharge: tx.metadata?.fromRecharge || 0,
+            description: tx.description,
+            date: tx.createdAt
+          }))
+        },
+        expectedAvailableRecharge,
+        calculatedAvailableRecharge,
+        isCorrect: expectedAvailableRecharge === calculatedAvailableRecharge,
+        difference: expectedAvailableRecharge - calculatedAvailableRecharge
+      }
+    });
+  } catch (error) {
+    console.error('Debug balance error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

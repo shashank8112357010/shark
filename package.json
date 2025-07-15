@@ -23,10 +23,12 @@
     "calculate-income": "tsx server/scripts/calculateDailyIncome.ts",
     "audit-balances": "tsx server/scripts/auditBalances.ts",
     "remove-fake-users": "tsx server/scripts/removeFakeUsers.ts",
+    "zero-balances": "tsx server/scripts/zeroBalances.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "@types/qrcode": "^1.5.5",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
@@ -35,6 +37,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.1",
+    "multer": "^2.0.1",
     "node-cron": "^3.0.3",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",

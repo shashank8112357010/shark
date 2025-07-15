@@ -41,35 +41,11 @@ router.post("/buy", async (req, res) => {
       });
     }
 
-    let transactionId: string;
-    
-    transactionId = generateTransactionId();
-    
-    const transaction = new Transaction({
-      phone,
-      type: TransactionType.PURCHASE,
-      amount: Number(price),
-      transactionId,
-      description: `Shark purchase - ${shark}`,
-      metadata: { shark, price: Number(price) }
-    });
-    
-    const qrData = `shark:${transactionId}:${phone}`;
-    const qrCode = await QRCode.toDataURL(qrData);
-    transaction.qrCode = qrCode;
-    await transaction.save();
-
-    // Calculate available recharge balance only
+    // Calculate available recharge balance first
     const availableRecharge = await calculateAvailableRecharge(phone);
+    
     // Only allow purchase if recharge balance is sufficient
     if (availableRecharge < Number(price)) {
-      await Transaction.findOneAndUpdate(
-        { transactionId },
-        {
-          status: TransactionStatus.FAILED,
-          description: `Insufficient recharge balance. Recharge: ₹${availableRecharge}, Required: ₹${price}`
-        }
-      );
       return res.status(400).json({
         error: "Insufficient recharge balance. Please recharge to buy this shark.",
         availableRecharge,
@@ -81,19 +57,29 @@ router.post("/buy", async (req, res) => {
     let fromRecharge = Number(price);
     let fromBalance = 0;
 
-    // Mark transaction as completed and record deduction sources
-    await Transaction.findOneAndUpdate(
-      { transactionId },
-      {
-        status: TransactionStatus.COMPLETED,
-        description: `Shark purchase completed - ${shark}`,
-        metadata: {
-          ...((shark && price) ? { shark, price: Number(price) } : {}),
-          fromRecharge,
-          fromBalance
-        }
+    let transactionId: string;
+    transactionId = generateTransactionId();
+    
+    // Create transaction with proper metadata from the start
+    const transaction = new Transaction({
+      phone,
+      type: TransactionType.PURCHASE,
+      amount: Number(price),
+      transactionId,
+      status: TransactionStatus.COMPLETED,
+      description: `Shark purchase completed - ${shark}`,
+      metadata: {
+        shark,
+        price: Number(price),
+        fromRecharge,
+        fromBalance
       }
-    );
+    });
+    
+    const qrData = `shark:${transactionId}:${phone}`;
+    const qrCode = await QRCode.toDataURL(qrData);
+    transaction.qrCode = qrCode;
+    await transaction.save();
 
     const investment = new SharkInvestment({
       phone,
@@ -105,42 +91,9 @@ router.post("/buy", async (req, res) => {
     });
     await investment.save();
 
-    // New referral system - only reward for FIRST shark purchase by referred user
-    const user = await User.findOne({ phone });
-    if (user && user.referrer) {
-      // Check if this referred user has already generated a referral reward
-      const existingReferralReward = await ReferralAmount.findOne({
-        referrer: user.referrer,
-        referred: phone
-      });
-      
-      if (!existingReferralReward) {
-        // This is the first shark purchase by this referred user - give reward
-        const rewardAmount = 500; // Fixed ₹500 reward for FIRST shark purchase
-        
-        // Create reward transaction for the referrer
-        const rewardTransactionId = generateTransactionId();
-
-
-
-        // Create referral amount record in new table
-        const referralAmount = new ReferralAmount({
-          referrer: user.referrer,
-          referred: phone,
-          referralTransactionId: transactionId,
-          rewardAmount: rewardAmount,
-          status: 'completed',
-          dateEarned: new Date(),
-          referredPurchaseAmount: Number(price),
-          rewardTransactionId: rewardTransactionId
-        });
-        await referralAmount.save();
-        
-        console.log(`✅ Referral reward processed: ${user.referrer} earned ₹${rewardAmount} for ${phone}'s FIRST shark purchase (${shark})`);
-      } else {
-        console.log(`ℹ️ No referral reward: ${phone} has already generated a referral reward for ${user.referrer} (first purchase already rewarded)`);
-      }
-    }
+    // Referral rewards are now handled at registration time
+    // No additional reward for shark purchases
+    console.log(`ℹ️ Shark purchase completed. Referral rewards are handled at registration time.`);
 
     res.json({
       success: true,

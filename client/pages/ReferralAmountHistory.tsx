@@ -5,7 +5,30 @@ import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { IndianRupee, Calendar, Users, TrendingUp, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  IndianRupee, 
+  Calendar, 
+  Users, 
+  TrendingUp, 
+  ShoppingCart, 
+  Wallet, 
+  Gift, 
+  AlertCircle,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle,
+  Clock,
+  Target
+} from "lucide-react";
+import { 
+  StatsSkeletons, 
+  ReferralHistorySkeletons, 
+  WithdrawalSkeletons 
+} from "@/components/ui/skeleton-components";
 
 interface ReferralAmountRecord {
   _id: string;
@@ -115,8 +138,30 @@ const ReferralAmountHistory = () => {
 
   if (loading || userLoading) {
     return (
-      <Layout className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size={48} />
+      <Layout className="scroll-smooth no-overscroll">
+        <div className="px-6 py-6">
+          <Header title="Referral History" />
+          
+          {/* Loading Stats */}
+          <div className="mt-6">
+            <StatsSkeletons />
+          </div>
+          
+          {/* Loading Referral History */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>
+            </div>
+            <ReferralHistorySkeletons />
+          </div>
+          
+          {/* Loading Withdrawals */}
+          <div className="mt-8">
+            <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+            <WithdrawalSkeletons />
+          </div>
+        </div>
       </Layout>
     );
   }
@@ -148,29 +193,65 @@ const ReferralAmountHistory = () => {
       <div className="px-6 py-6">
     
         
+        {/* Header with Progress */}
+        <div className="mt-6">
+          {/* <Header title="Referral Earnings" /> */}
+          
+          {/* Progress towards withdrawal */}
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-800">Progress to Withdrawal</span>
+              <span className="text-sm font-bold text-blue-800">
+                ₹{totalEarnings} / ₹1500
+              </span>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                style={{ width: `${Math.min((totalEarnings / 1500) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <div className="mt-2 text-xs text-blue-600">
+              {totalEarnings >= 1500 ? 
+                "🎉 You can withdraw your earnings now!" : 
+                `${Math.ceil((1500 - totalEarnings) / 300)} more referrals needed`
+              }
+            </div>
+          </div>
+        </div>
+
         {/* Summary Stats */}
         <div className="mt-6 grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="text-shark-blue mr-2" size={20} />
-                <span className="text-2xl font-bold text-shark-blue">
-                  {totalReferrals}
-                </span>
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Total Referrals</p>
+                  <p className="text-2xl font-bold text-blue-600">{totalReferrals}</p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <Users className="text-blue-600" size={24} />
+                </div>
               </div>
-              <p className="text-sm text-gray-600">Successful Referrals</p>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <IndianRupee className="text-green-600 mr-1" size={20} />
-                <span className="text-2xl font-bold text-green-600">
-                  {totalEarnings.toFixed(0)}
-                </span>
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Total Earned</p>
+                  <div className="flex items-center">
+                    <IndianRupee className="text-green-600 mr-1" size={16} />
+                    <span className="text-2xl font-bold text-green-600">
+                      {totalEarnings.toFixed(0)}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-100 rounded-full">
+                  <Gift className="text-green-600" size={24} />
+                </div>
               </div>
-              <p className="text-sm text-gray-600">Total Earned</p>
             </CardContent>
           </Card>
         </div>
@@ -295,12 +376,12 @@ const ReferralAmountHistory = () => {
         <div className="mt-8 bg-blue-50 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">How Referral Earnings Work</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-                            <li>• Earn ₹300 for each referral's FIRST shark purchase only</li>
-            <li>• One-time reward per referral - subsequent purchases don't earn rewards</li>
-            <li>• No reward for just registration - only for shark purchases</li>
-            <li>• Minimum transfer: ₹1000</li>
+            <li>• Earn ₹300 for each referral's registration (immediate reward)</li>
+            <li>• One-time reward per referral - no additional rewards for purchases</li>
+            <li>• Reward given instantly when someone signs up with your code</li>
+            <li>• Minimum transfer: ₹1500</li>
             <li>• 15% cut applied when transferring to balance</li>
-            <li>• Example: ₹1000 referral earnings → ₹850 in balance</li>
+            <li>• Example: ₹1500 referral earnings → ₹1275 in balance</li>
           </ul>
         </div>
       </div>

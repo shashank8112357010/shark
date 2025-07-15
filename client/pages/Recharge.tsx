@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import Header from "@/components/Header";
 import UserInfo from "@/components/UserInfo";
+import PaymentScreenshot from "@/components/PaymentScreenshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { CreditCard, Check, AlertCircle, Copy } from "lucide-react";
-import qrImage from '/public/qr.jpeg';
+const qrImage = '/qr.jpeg';
 import { useStateChange } from "@/hooks/useStateChange";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -20,6 +21,7 @@ const Recharge = () => {
   const { toast } = useToast();
   const [amount, setAmount] = useState("1000");
   const [utrNumber, setUtrNumber] = useState("");
+  const [paymentScreenshot, setPaymentScreenshot] = useState("");
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { userData } = useUser();
@@ -92,7 +94,8 @@ const Recharge = () => {
           phone: userData.phone, 
           amount: amountValue, 
           utrNumber: utrNumber.trim(), 
-          qrCode: qrImage 
+          qrCode: qrImage,
+          paymentScreenshot: paymentScreenshot 
         }),
       });
 
@@ -109,6 +112,7 @@ const Recharge = () => {
       
       setShowConfirmDialog(false);
       setUtrNumber("");
+      setPaymentScreenshot("");
       
       setTimeout(() => {
         navigate("/dashboard");
@@ -170,6 +174,10 @@ const Recharge = () => {
               <div className="flex items-start">
                 <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
                 <span>Confirm the recharge amount and fill in the UTR number correctly</span>
+              </div>
+              <div className="flex items-start">
+                <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
+                <span>Upload a clear screenshot of your payment confirmation</span>
               </div>
               <div className="flex items-start">
                 <div className="w-2 h-2 bg-orange-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
@@ -251,6 +259,15 @@ const Recharge = () => {
           <DialogHeader>
             <DialogTitle>Confirm Payment Details</DialogTitle>
           </DialogHeader>
+          {loading && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-50">
+              <div className="text-center">
+                <LoadingSpinner size={32} className="mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-900">Submitting Request...</p>
+                <p className="text-sm text-gray-500">Please wait while we process your recharge request</p>
+              </div>
+            </div>
+          )}
           <div className="space-y-4">
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="flex items-center space-x-2 mb-2">
@@ -273,6 +290,11 @@ const Recharge = () => {
                 You can find this in your payment app after successful transaction
               </p>
             </div>
+
+            <PaymentScreenshot 
+              screenshot={paymentScreenshot}
+              onScreenshotCapture={setPaymentScreenshot}
+            />
 
             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
               <p className="text-sm text-yellow-800">

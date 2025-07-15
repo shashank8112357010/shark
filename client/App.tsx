@@ -24,6 +24,7 @@ import AdminRechargeRequests from "./pages/AdminRechargeRequests";
 import AdminWithdrawals from "./pages/AdminWithdrawals";
 import AdminManageSharks from "./pages/AdminManageSharks";
 import IncomeHistory from "./pages/IncomeHistory";
+import ForgotPassword from "./pages/ForgotPassword";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
         <UserProvider>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<Dashboard />}/>
           <Route path="/profile" element={<Profile />} />
           <Route path="/invite" element={<Invite />} />

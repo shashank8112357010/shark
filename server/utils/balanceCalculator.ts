@@ -7,6 +7,7 @@ import Transaction, { TransactionType, TransactionStatus } from '../models/Trans
 export async function calculateUserBalance(phone: string): Promise<number> {
   // Sum all non-recharge DEPOSITs (referral earnings, daily income, etc.)
   const nonRechargeDeposits = await Transaction.aggregate([
+   
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.DEPOSIT,
       $or: [
         { 'metadata.source': { $exists: false } },
@@ -52,6 +53,7 @@ export async function checkSufficientBalance(phone: string, amount: number): Pro
  * Calculate available recharge amount for a user (sum of all completed DEPOSITs with metadata.source === 'recharge', minus all PURCHASEs that used recharge)
  */
 export async function calculateAvailableRecharge(phone: string): Promise<number> {
+  console.log(`Calculating available recharge for user: ${phone}`);
   // Sum all completed recharge DEPOSITs
   const rechargeDeposits = await Transaction.aggregate([
     { $match: { phone, status: TransactionStatus.COMPLETED, type: TransactionType.DEPOSIT, 'metadata.source': 'recharge' } },

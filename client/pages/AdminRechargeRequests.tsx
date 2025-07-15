@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { ArrowLeft, Search, Filter, Check, X, Eye, RefreshCw, Inbox } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Check, X, Eye, RefreshCw, Inbox, Camera } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface RechargeRequest {
@@ -17,6 +17,7 @@ interface RechargeRequest {
   amount: number;
   utrNumber: string;
   qrCode: string;
+  paymentScreenshot?: string;
   status: 'pending' | 'approved' | 'rejected';
   adminNotes?: string;
   reviewedBy?: string;
@@ -375,11 +376,21 @@ const AdminRechargeRequests = () => {
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {filteredRequests.map((request) => (
                   <div key={request._id} className="border rounded-lg p-4 bg-white">
-                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start space-y-4 lg:space-y-0">
-                      <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {request.paymentScreenshot && (
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={request.paymentScreenshot} 
+                              alt="Payment Screenshot" 
+                              className="w-16 h-16 object-cover rounded-lg border cursor-pointer"
+                              onClick={() => window.open(request.paymentScreenshot, '_blank')}
+                            />
+                          </div>
+                        )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div>
                             <p className="text-sm text-gray-600">Phone</p>
@@ -398,39 +409,11 @@ const AdminRechargeRequests = () => {
                             <p className="text-sm">{formatDate(request.createdAt)}</p>
                           </div>
                         </div>
-                        
-                        {request.adminNotes && (
-                          <div className="mt-3">
-                            <p className="text-sm text-gray-600">Admin Notes</p>
-                            <p className="text-sm bg-gray-50 p-2 rounded">{request.adminNotes}</p>
-                          </div>
-                        )}
-                        
-                        {request.reviewedBy && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            Reviewed by {request.reviewedBy} on {formatDate(request.reviewedAt!)}
-                          </div>
-                        )}
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 lg:ml-4">
-                        <div className="flex items-center justify-between sm:justify-start space-x-3">
-                          {getStatusBadge(request.status)}
-                          
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedRequest(request)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                <span className="hidden sm:inline">View</span>
-                              </Button>
-                            </DialogTrigger>
-                          </Dialog>
-                        </div>
-                        {/* Direct Approve Button for pending requests */}
+                      <div className="flex items-center space-x-3">
+                        {getStatusBadge(request.status)}
+                        
                         {request.status === 'pending' && (
                           <Dialog>
                             <DialogTrigger asChild>
@@ -442,7 +425,7 @@ const AdminRechargeRequests = () => {
                                   setReviewData({ status: 'approved', adminNotes: '', approvedAmount: request.amount.toString() });
                                 }}
                               >
-                                <Check className="h-4 w-4 sm:mr-1" />
+                                <Check className="h-4 w-4 mr-1" />
                                 Approve
                               </Button>
                             </DialogTrigger>
@@ -544,8 +527,34 @@ const AdminRechargeRequests = () => {
                             </DialogContent>
                           </Dialog>
                         )}
+                        
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedRequest(request)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
                       </div>
                     </div>
+                    
+                    {request.adminNotes && (
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-600">Admin Notes</p>
+                        <p className="text-sm bg-gray-50 p-2 rounded">{request.adminNotes}</p>
+                      </div>
+                    )}
+                    
+                    {request.reviewedBy && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        Reviewed by {request.reviewedBy} on {formatDate(request.reviewedAt!)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -618,6 +627,23 @@ const AdminRechargeRequests = () => {
                     <p className="text-sm text-gray-600 break-all">{selectedRequest.qrCode}</p>
                   </div>
                 </div>
+
+                {selectedRequest.paymentScreenshot && (
+                  <div>
+                    <Label>Payment Screenshot</Label>
+                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                      <img 
+                        src={selectedRequest.paymentScreenshot} 
+                        alt="Payment Screenshot" 
+                        className="max-w-full h-auto rounded-lg border border-gray-300 cursor-pointer"
+                        onClick={() => window.open(selectedRequest.paymentScreenshot, '_blank')}
+                      />
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Click to view full size
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {selectedRequest.status === 'pending' && (
                   <>

@@ -17,7 +17,16 @@ const Register = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "2rem auto", background: "#fff", padding: 24, borderRadius: 12 }}>
+    <div className="mobile-container relative" style={{ maxWidth: 400, margin: "2rem auto", background: "#fff", padding: 24, borderRadius: 12, zIndex: 1 }}>
+      <video
+          src="/shark.mp4"
+          autoPlay
+          loop
+          muted
+          className=" w-full h-full object-cover"
+       
+        />
+      <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: "2rem auto", background: "#fff", padding: 24, borderRadius: 12, position: 'relative', zIndex: 1 }}>
       <h2>Register</h2>
       <label>
         Phone:
@@ -41,6 +50,7 @@ const Register = () => {
       <br />
       <button type="submit">Register</button>
     </form>
+    </div>
   );
 };
 

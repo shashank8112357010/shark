@@ -63,6 +63,16 @@ const withdrawalSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  // Bank details metadata for admin visibility
+  bankDetailsName: {
+    type: String,
+    required: false,
+  },
+  bankDetailsType: {
+    type: String,
+    enum: ['upi', 'bank', 'qr'],
+    required: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

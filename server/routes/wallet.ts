@@ -13,8 +13,15 @@ router.get("/balance/:phone", async (req, res) => {
     const phone = req.params.phone;
     
     // Calculate total balance (recharge + non-recharge) for display
-    const balance = await calculateAvailableRecharge(phone);
-    res.json({ balance });
+    const rechargeBalance = await calculateAvailableRecharge(phone);
+    const nonRechargeBalance = await calculateUserBalance(phone);
+    const totalBalance = nonRechargeBalance;
+    
+    res.json({ 
+      balance: totalBalance,
+      rechargeBalance,
+      nonRechargeBalance
+    });
   } catch (error: any) {
     console.error('Error calculating balance:', error);
     res.status(500).json({ error: 'Failed to calculate balance', details: error.message });
@@ -27,7 +34,7 @@ router.get("/balance/:phone", async (req, res) => {
 router.post("/recharge-request", async (req, res) => {
   try {
     await connectDb();
-    const { phone, amount, utrNumber, qrCode } = req.body;
+    const { phone, amount, utrNumber, qrCode, paymentScreenshot } = req.body;
     
     if (!phone || !amount || !utrNumber || !qrCode) {
       return res.status(400).json({ 
@@ -49,7 +56,8 @@ router.post("/recharge-request", async (req, res) => {
       phone,
       amount: Number(amount),
       utrNumber,
-      qrCode
+      qrCode,
+      paymentScreenshot: paymentScreenshot || null
     });
 
     await rechargeRequest.save();

@@ -128,23 +128,11 @@ const Invite = () => {
   return (
     <Layout className="scroll-smooth no-overscroll text-readable">
       {/* Hero Image */}
-      <div className="px-6 py-6">
-        <div className="relative h-48 bg-gradient-to-r from-cyan-400 to-teal-500 rounded-xl overflow-hidden">
-          {/* Background water effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-cyan-400/30"></div>
-
-          {/* Shark cans illustration placeholder */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white text-6xl font-bold italic opacity-80">
-              SHARK
-            </div>
-          </div>
-        </div>
-      </div>
+    
       {/* Scan & Register Section */}
-      <div className="px-6 mt-8 pb-6">
+      <div className="px-6 pt-4 pb-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-4 text-readable">Scan & Register</h3>
+          {/* <h3 className="text-lg font-semibold mb-4 text-readable">Scan & Register</h3> */}
           <div className="bg-white rounded-lg p-6 inline-block card-shadow">
             <div className="w-48 h-48 flex items-center justify-center mx-auto">
               <QRCodeCanvas value={inviteLink} size={192} />

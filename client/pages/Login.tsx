@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Phone, Lock, Key, Users } from "lucide-react";
+import { Phone, Lock, Key, Users, Eye, EyeOff } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-   const { userData , refreshUserData } = useUser();
+  const { userData, refreshUserData } = useUser();
   const location = useLocation();
 
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     phone: "",
     password: "",
@@ -20,23 +21,10 @@ const Login = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // ✅ Get invite_code from URL if present and update formData
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const inviteCodeFromUrl = queryParams.get("invite") || queryParams.get("invite_code");
-
-    if (inviteCodeFromUrl && inviteCodeFromUrl !== formData.invitationCode) {
-      setFormData((prev) => ({
-        ...prev,
-        invitationCode: inviteCodeFromUrl,
-      }));
-      setIsLogin(false); // Switch to register mode
-      // Optional: clean the URL
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.search]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showWithdrawalPin, setShowWithdrawalPin] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -45,8 +33,9 @@ const Login = () => {
     });
   };
 
+  const { toast } = useToast();
+
   const handleSubmit = async () => {
-    setError("");
     setLoading(true);
     try {
       if (isLogin) {
@@ -65,7 +54,11 @@ const Login = () => {
         navigate("/dashboard");
       } else {
         if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match");
+          toast({
+            title: "Error",
+            description: "Passwords do not match",
+            variant: "destructive",
+          });
           setLoading(false);
           return;
         }
@@ -89,159 +82,209 @@ const Login = () => {
         if (!data.success) throw new Error(data.error || "Registration failed");
         localStorage.setItem("user", JSON.stringify(data.user));
         setIsLogin(true);
-        setError("");
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      toast({
+        title: "Error",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mobile-container">
-      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-        <div className="bg-gradient-to-br from-shark-blue to-shark-blue-dark px-6 py-8 flex-shrink-0 safe-area-top">
-          <div className="text-center">
-            <div className="bg-shark-blue-dark px-6 py-3 rounded-xl inline-block mb-3">
-              <div className="text-white text-4xl font-bold italic">Shark</div>
-            </div>
-            <div className="text-white/90 text-base font-medium">
-              Dive Deep, Earn More
+    <div className="mobile-container relative">
+      <div className="flex-1 overflow-y-auto scroll-smooth no-overscroll">
+        <div>
+          <video
+            src="/shark.mp4"
+            autoPlay
+            loop
+            muted
+            className=" w-full h-50 object-cover"
+          />
+        </div>
+        <div className="px-6 py-6 space-y-6 min-h-full flex flex-col">
+          <div>
+            <label className="block text-gray-800 text-sm font-medium mb-2">
+              Phone Number
+            </label>
+            <div className="relative">
+              <Phone
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-shark-blue"
+                size={18}
+              />
+              <Input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="h-12 pl-10 pr-4 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-shark-blue focus:border-transparent"
+                placeholder="Enter phone number"
+              />
             </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto scroll-smooth no-overscroll">
-          <div className="px-6 py-6 space-y-6 min-h-full flex flex-col">
-            <div>
-              <label className="block text-gray-800 text-base font-semibold mb-2">
-                Phone Number
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-shark-blue" size={20} />
-                <Input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="h-14 pl-12 pr-4 bg-white border border-gray-300 rounded-lg"
-                  placeholder="Enter phone number"
-                />
-              </div>
+          <div>
+            <label className="block text-gray-800 text-sm font-medium mb-2">
+              Enter Login Password
+            </label>
+            <div className="relative">
+              <Lock
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-shark-blue"
+                size={18}
+              />
+              <Input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="h-12 pl-10 pr-12 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-shark-blue focus:border-transparent"
+                placeholder="Enter password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-shark-blue"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-
-            <div>
-              <label className="block text-gray-800 text-base font-semibold mb-2">
-                Enter Login Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-shark-blue" size={20} />
-                <Input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="h-14 pl-12 pr-4 bg-white border border-gray-300 rounded-lg"
-                  placeholder="Enter password"
-                />
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-shark-blue text-sm font-medium hover:underline"
+                >
+                  Forgot Password?
+                </button>
               </div>
-            </div>
+            )}
+          </div>
 
-            {!isLogin && (
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-gray-800 text-sm font-medium mb-2">
+                  Confirm The Login Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-shark-blue"
+                    size={18}
+                  />
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="h-12 pl-10 pr-12 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-shark-blue focus:border-transparent"
+                    placeholder="Confirm password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-shark-blue"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-800 text-sm font-medium mb-2">
+                  Enter The Withdrawal PIN
+                </label>
+                <div className="relative">
+                  <Key
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-shark-blue"
+                    size={18}
+                  />
+                  <Input
+                    type={showWithdrawalPin ? "text" : "password"}
+                    name="withdrawalPin"
+                    value={formData.withdrawalPin}
+                    onChange={handleInputChange}
+                    className="h-12 pl-10 pr-12 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-shark-blue focus:border-transparent"
+                    placeholder="Enter withdrawal PIN"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowWithdrawalPin(!showWithdrawalPin)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-shark-blue"
+                  >
+                    {showWithdrawalPin ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-800 text-sm font-medium mb-2">
+                  Invitation Code
+                </label>
+                <div className="relative">
+                  <Users
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-shark-blue"
+                    size={18}
+                  />
+                  <Input
+                    type="text"
+                    name="invitationCode"
+                    value={formData.invitationCode}
+                    onChange={handleInputChange}
+                    className="h-12 pl-10 pr-4 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-shark-blue focus:border-transparent"
+                    placeholder="Invitation code"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="space-y-4 mt-8 pb-6 safe-area-bottom">
+            {isLogin ? (
               <>
-                <div>
-                  <label className="block text-gray-800 text-base font-semibold mb-2">
-                    Confirm The Login Pass
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-shark-blue" size={20} />
-                    <Input
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="h-14 pl-12 pr-4 bg-white border border-gray-300 rounded-lg"
-                      placeholder="Confirm password"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-800 text-base font-semibold mb-2">
-                    Enter The Withdrawal PIN
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-shark-blue" size={20} />
-                    <Input
-                      type="password"
-                      name="withdrawalPin"
-                      value={formData.withdrawalPin}
-                      onChange={handleInputChange}
-                      className="h-14 pl-12 pr-4 bg-white border border-gray-300 rounded-lg"
-                      placeholder="Enter withdrawal PIN"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-800 text-base font-semibold mb-2">
-                    Invitation Code
-                  </label>
-                  <div className="relative">
-                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-shark-blue" size={20} />
-                    <Input
-                      type="text"
-                      name="invitationCode"
-                      value={formData.invitationCode}
-                      onChange={handleInputChange}
-                      className="h-14 pl-12 pr-4 bg-white border border-gray-300 rounded-lg"
-                      placeholder="Invitation code"
-                    />
-                  </div>
-                </div>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full h-14 bg-shark-blue text-white text-lg font-medium"
+                >
+                  {loading ? "Logging in..." : "LOGIN"}
+                </Button>
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className="w-full text-shark-blue text-base font-medium py-3"
+                >
+                  Don’t have an account? REGISTER
+                </button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full h-14 bg-shark-blue text-white text-lg font-medium"
+                >
+                  {loading ? "Registering..." : "REGISTER"}
+                </Button>
+                <button
+                  onClick={() => setIsLogin(true)}
+                  className="w-full text-shark-blue text-base font-medium py-3"
+                >
+                  Already have an account? LOGIN
+                </button>
               </>
             )}
-
-            {error && (
-              <div className="text-red-600 text-center text-sm mb-2">{error}</div>
-            )}
-
-            <div className="space-y-4 mt-8 pb-6 safe-area-bottom">
-              {isLogin ? (
-                <>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="w-full h-14 bg-shark-blue text-white text-lg font-medium"
-                  >
-                    {loading ? "Logging in..." : "LOGIN"}
-                  </Button>
-                  <button
-                    onClick={() => setIsLogin(false)}
-                    className="w-full text-shark-blue text-base font-medium py-3"
-                  >
-                    Don’t have an account? REGISTER
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="w-full h-14 bg-shark-blue text-white text-lg font-medium"
-                  >
-                    {loading ? "Registering..." : "REGISTER"}
-                  </Button>
-                  <button
-                    onClick={() => setIsLogin(true)}
-                    className="w-full text-shark-blue text-base font-medium py-3"
-                  >
-                    Already have an account? LOGIN
-                  </button>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </div>

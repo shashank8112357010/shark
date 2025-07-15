@@ -4,6 +4,7 @@ import Withdrawal from '../models/Withdrawal';
 import User, { IUser } from '../models/User';
 import Transaction from '../models/Transaction';
 import { TransactionType, TransactionStatus } from '../models/Transaction';
+import { BankDetails } from '../models/BankDetails';
 import bcrypt from "bcryptjs";
 
 const router = Router();
@@ -89,7 +90,7 @@ router.get("/:phone/limits", async (req, res) => {
 router.post("/request", async (req, res) => {
   await connectDb();
   try {
-    const { phone, amount, password, upiId, bankAccount, ifsc, accountHolder, qrImage } = req.body;
+    const { phone, amount, password, accountDetails } = req.body;
 
     // TEMPORARY: Allow withdrawals at any time for testing
     // if (!isWithdrawalTimeValid()) {
@@ -115,27 +116,15 @@ router.post("/request", async (req, res) => {
       return res.status(401).json({ error: "Invalid withdrawal password" });
     }
 
-    // Validate payout info: at least one must be provided
-    if (!upiId && (!bankAccount || !ifsc || !accountHolder) && !qrImage) {
-      return res.status(400).json({ error: 'Please provide at least one payout method: UPI ID, Bank Details, or QR Image' });
+    // Validate account details
+    if (!accountDetails || !accountDetails.id) {
+      return res.status(400).json({ error: 'Please select a withdrawal account' });
     }
-    // If provided, validate UPI ID
-    if (upiId && (typeof upiId !== 'string' || upiId.length < 5)) {
-      return res.status(400).json({ error: 'If provided, UPI ID must be valid' });
-    }
-    // If provided, validate bank details
-    if (bankAccount && typeof bankAccount !== 'string') {
-      return res.status(400).json({ error: 'If provided, Bank Account must be a string' });
-    }
-    if (ifsc && typeof ifsc !== 'string') {
-      return res.status(400).json({ error: 'If provided, IFSC must be a string' });
-    }
-    if (accountHolder && typeof accountHolder !== 'string') {
-      return res.status(400).json({ error: 'If provided, Account Holder must be a string' });
-    }
-    // If provided, validate QR image
-    if (qrImage && typeof qrImage !== 'string') {
-      return res.status(400).json({ error: 'If provided, QR Image must be a string (URL)' });
+    
+    // Verify the account belongs to the user
+    const bankDetail = await BankDetails.findOne({ _id: accountDetails.id, phone });
+    if (!bankDetail) {
+      return res.status(400).json({ error: 'Invalid account selection' });
     }
 
     // Check wallet balance using Transaction aggregation
@@ -173,10 +162,14 @@ router.post("/request", async (req, res) => {
     }
 
     // Build payout description for transaction
-    let payoutDesc = [];
-    if (upiId) payoutDesc.push(`UPI: ${upiId}`);
-    if (bankAccount && ifsc && accountHolder) payoutDesc.push(`Bank: ${bankAccount}, ${ifsc}, ${accountHolder}`);
-    if (qrImage) payoutDesc.push(`QR Image`);
+    let payoutDesc = bankDetail.name;
+    if (bankDetail.type === 'upi') {
+      payoutDesc += ` (UPI: ${bankDetail.details.upiId})`;
+    } else if (bankDetail.type === 'bank') {
+      payoutDesc += ` (Bank: ****${bankDetail.details.accountNumber?.slice(-4)})`;
+    } else if (bankDetail.type === 'qr') {
+      payoutDesc += ` (QR Code Payment)`;
+    }
 
     // Create withdrawal transaction with unique transactionId
     const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
@@ -186,15 +179,9 @@ router.post("/request", async (req, res) => {
       amount,
       status: TransactionStatus.COMPLETED, // Set status to completed for immediate balance deduction
       transactionId,
-      description: `Withdrawal request to ${payoutDesc.join(' | ')}`
+      description: `Withdrawal request to ${payoutDesc}`
     });
     await transaction.save();
-
-    // Save UPI ID to user profile for future use
-    if (upiId && upiId !== user.upiId) {
-      user.upiId = upiId;
-      await user.save();
-    }
 
     // Create withdrawal record
     const withdrawal = new Withdrawal({
@@ -203,11 +190,15 @@ router.post("/request", async (req, res) => {
       tax,
       netAmount,
       transactionId: transaction._id,
-      upiId,
-      bankAccount,
-      ifsc,
-      accountHolder,
-      qrImage
+      // Store the bank detail info for reference
+      upiId: bankDetail.type === 'upi' ? bankDetail.details.upiId : undefined,
+      bankAccount: bankDetail.type === 'bank' ? bankDetail.details.accountNumber : undefined,
+      ifsc: bankDetail.type === 'bank' ? bankDetail.details.ifscCode : undefined,
+      accountHolder: bankDetail.type === 'bank' ? bankDetail.details.accountHolderName : undefined,
+      qrImage: bankDetail.type === 'qr' ? bankDetail.details.qrCodeUrl : undefined,
+      // Store bank details metadata for admin visibility
+      bankDetailsName: bankDetail.name,
+      bankDetailsType: bankDetail.type
     });
     await withdrawal.save();
 

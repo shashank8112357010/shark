@@ -1,6 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import User from '../models/User';
+import ReferralAmount from '../models/ReferralAmount';
+import Transaction, { TransactionType, TransactionStatus } from '../models/Transaction';
 
 import QRCode from 'qrcode';
 import { connectDb } from "../utils/db";
@@ -80,8 +82,31 @@ router.post("/register", async (req, res) => {
     // Generate referral link
     const referralLink = generateReferralLink(userInviteCode);
     
-    // Note: Referral rewards are now only given when referred user buys shark
-    // Registration no longer gives immediate reward
+// Create referral reward immediately upon registration
+    if (referrer) {
+      const referralTransactionId = `REG-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const referralAmount = new ReferralAmount({
+        referrer: referrer,
+        referred: phone,
+        referralTransactionId: referralTransactionId,
+        rewardAmount: 300,  // Set reward amount for registration
+        status: 'completed',
+        dateEarned: new Date(),
+        referredPurchaseAmount: 0  // Set to 0 as no purchase is necessary
+      });
+      await referralAmount.save();
+
+      // Create reward transaction in the transaction model
+      const rewardTransaction = new Transaction({
+        phone: referrer,
+        type: TransactionType.REFERRAL,
+        amount: 300,  // Set reward amount
+        transactionId: referralTransactionId,
+        description: `Referral reward for referring ${phone} (registration)`,
+        status: TransactionStatus.COMPLETED
+      });
+      await rewardTransaction.save();
+    }
     
     res.json({ 
       success: true, 
@@ -137,6 +162,56 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Forgot password
+router.post("/forgot-password", async (req, res) => {
+  console.log("[/api/auth/forgot-password] Received request");
+  console.log("Request Body:", req.body);
+  try {
+    console.log("Connecting to DB...");
+    await connectDb();
+    console.log("DB connected.");
+    const { phone, withdrawalPin, newPassword } = req.body;
+
+    if (!phone || !withdrawalPin || !newPassword) {
+      console.log("Missing required fields");
+      return res.status(400).json({ error: "Phone, withdrawal PIN, and new password are required" });
+    }
+
+    console.log(`Finding user with phone: ${phone}`);
+    const user = await User.findOne({ phone });
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("User found.");
+
+    console.log("Verifying withdrawal PIN...");
+    const isWithdrawalPinValid = await bcrypt.compare(withdrawalPin, user.withdrawalPassword);
+    if (!isWithdrawalPinValid) {
+      console.log("Invalid withdrawal PIN");
+      return res.status(401).json({ error: "Invalid withdrawal PIN" });
+    }
+    console.log("Withdrawal PIN verified.");
+
+    console.log("Hashing new password...");
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    console.log("New password hashed.");
+
+    console.log("Updating user password...");
+    await User.findOneAndUpdate(
+      { phone },
+      { password: hashedNewPassword },
+      { new: true }
+    );
+    console.log("User password updated.");
+
+    res.json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: "Password reset failed. Please try again." });
+  }
+});
+
 // Get user by phone
 router.get("/user/:phone", async (req, res) => {
   await connectDb();
@@ -147,17 +222,29 @@ router.get("/user/:phone", async (req, res) => {
 
 // Demo user creation (if not exists)
 router.post("/demo-user", async (_req, res) => {
-  const db = await getDb();
-  const users = db.collection("users");
-  const phone = "9999999999";
-  const password = "admin123";
-  let user = await users.findOne({ phone });
-  if (!user) {
-    const hash = await bcrypt.hash(password, 10);
-    user = { phone, password: hash, inviteCode: "demo", created: new Date() };
-    await users.insertOne(user);
+  try {
+    await connectDb();
+    const phone = "9999999999";
+    const password = "admin123";
+    
+    let user = await User.findOne({ phone });
+    if (!user) {
+      const hash = await bcrypt.hash(password, 10);
+      const withdrawalHash = await bcrypt.hash(password, 10);
+      user = new User({
+        phone,
+        password: hash,
+        withdrawalPassword: withdrawalHash,
+        inviteCode: "demo",
+        created: new Date()
+      });
+      await user.save();
+    }
+    res.json({ success: true, user: { phone, inviteCode: user.inviteCode } });
+  } catch (error) {
+    console.error('Demo user creation error:', error);
+    res.status(500).json({ error: "Demo user creation failed" });
   }
-  res.json({ success: true, user: { phone, inviteCode: user.inviteCode } });
 });
 
 export default router;
