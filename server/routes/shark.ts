@@ -91,6 +91,16 @@ router.post("/buy", async (req, res) => {
     });
     await investment.save();
 
+    // Update referral record if this user was referred and hasn't been marked as purchased yet
+    await ReferralAmount.findOneAndUpdate(
+      { referred: phone, referredPurchaseAmount: 0 },
+      {
+        referredPurchaseAmount: Number(price),
+        status: 'completed',
+        dateEarned: new Date(),
+      }
+    );
+    console.log(`ReferralAmount updated for referred user if applicable.`);
     // Referral rewards are now handled at registration time
     // No additional reward for shark purchases
     console.log(`ℹ️ Shark purchase completed. Referral rewards are handled at registration time.`);

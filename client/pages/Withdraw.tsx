@@ -542,13 +542,13 @@ const Withdraw = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${
-                          item.status === 'success' ? 'bg-green-100' :
-                          item.status === 'pending' ? 'bg-yellow-100' :
+                          item.status === 'COMPLETED' ? 'bg-green-100' :
+                          item.status === 'PENDING' ? 'bg-yellow-100' :
                           'bg-red-100'
                         }`}>
-                          {item.status === 'success' ? (
+                          {item.status === 'COMPLETED' ? (
                             <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : item.status === 'pending' ? (
+                          ) : item.status === 'PENDING' ? (
                             <Clock className="h-5 w-5 text-yellow-600" />
                           ) : (
                             <XCircle className="h-5 w-5 text-red-600" />
@@ -568,7 +568,7 @@ const Withdraw = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <Badge variant={item.status === 'success' ? 'default' : item.status === 'pending' ? 'secondary' : 'destructive'}>
+                        <Badge variant={item.status === 'COMPLETED' ? 'default' : item.status === 'PENDING' ? 'PENDING' : 'destructive'}>
                           {item.status}
                         </Badge>
                         {item.paymentUtr && (

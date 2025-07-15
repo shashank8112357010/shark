@@ -69,6 +69,50 @@ const BankDetailsModal = ({ children, onDetailsSelected }: BankDetailsModalProps
     }
   }, [open, userData?.phone]);
 
+
+    
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions to maintain aspect ratio
+        const maxWidth = 800;
+        const maxHeight = 600;
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression (quality 0.7)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+
+
   const fetchBankDetails = async () => {
     if (!userData?.phone) return;
     
@@ -93,16 +137,9 @@ const BankDetailsModal = ({ children, onDetailsSelected }: BankDetailsModalProps
     try {
       let qrCodeUrl = '';
       if (type === 'qr' && formData.qrFile) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', formData.qrFile);
-        const uploadResponse = await fetch('/api/upload/qr', {
-          method: 'POST',
-          body: formDataUpload,
-        });
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          qrCodeUrl = uploadData.url;
-        }
+        qrCodeUrl = await compressImage(formData.qrFile);
+        console.log('QR Code URL:', qrCodeUrl);
+   
       }
 
       const newDetails: BankDetails = {
@@ -408,6 +445,7 @@ const BankDetailsModal = ({ children, onDetailsSelected }: BankDetailsModalProps
                     type="file"
                     accept="image/*"
                     onChange={(e) => setFormData({ ...formData, qrFile: e.target.files?.[0] || null })}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                 </div>
                 <Button 

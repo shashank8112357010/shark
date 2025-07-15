@@ -24,6 +24,7 @@
     "audit-balances": "tsx server/scripts/auditBalances.ts",
     "remove-fake-users": "tsx server/scripts/removeFakeUsers.ts",
     "zero-balances": "tsx server/scripts/zeroBalances.ts",
+    "delete-today-withdrawals": "tsx server/scripts/deleteTodayWithdrawals.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc"
   },
