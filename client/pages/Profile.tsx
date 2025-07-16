@@ -356,7 +356,7 @@ const Profile = () => {
               
               <Button
                 onClick={handleWithdrawReferralEarnings}
-                disabled={totalReferralEarnings < 1000 || withdrawalLoading}
+                disabled={totalReferralEarnings < 1500 || withdrawalLoading}
                 className={`w-full h-12 text-sm font-semibold rounded-lg transition-all ${
                   totalReferralEarnings < 1000 
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"

@@ -95,7 +95,7 @@ router.post("/register", async (req, res) => {
         referredPurchaseAmount: 0  // Set to 0 as no purchase is necessary
       });
       await referralAmount.save();
-
+//shashank
       // Create reward transaction in the transaction model
       const rewardTransaction = new Transaction({
         phone: referrer,
