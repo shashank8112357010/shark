@@ -48,7 +48,7 @@ const AdminRechargeRequests = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, [statusFilter, currentPage, location.pathname]);
+  }, [statusFilter, currentPage, location.pathname, searchTerm]);
 
   // Refetch data when component mounts or becomes visible
   useEffect(() => {
@@ -81,6 +81,9 @@ const AdminRechargeRequests = () => {
       
       if (statusFilter) {
         params.append('status', statusFilter);
+      }
+      if (searchTerm) {
+        params.append('searchTerm', searchTerm);
       }
 
       console.log('Fetching recharge requests with params:', params.toString());
@@ -227,10 +230,7 @@ const AdminRechargeRequests = () => {
     );
   };
 
-  const filteredRequests = requests.filter(request =>
-    request.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.utrNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRequests = requests;
 
   return (
     <div className="min-h-screen ">

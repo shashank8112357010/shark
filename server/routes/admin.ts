@@ -179,10 +179,18 @@ router.get('/recharge-requests', authenticateAdmin, async (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const status = req.query.status as string;
+    const searchTerm = req.query.searchTerm as string;
 
     const filter: any = {};
     if (status && ['pending', 'approved', 'rejected'].includes(status)) {
       filter.status = status;
+    }
+    if (searchTerm && searchTerm.trim() !== '') {
+      const regex = new RegExp(searchTerm.trim(), 'i');
+      filter.$or = [
+        { phone: regex },
+        { utrNumber: regex },
+      ];
     }
 
     const rechargeRequests = await (RechargeRequest as any).find(filter)
